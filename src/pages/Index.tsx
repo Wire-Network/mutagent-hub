@@ -24,13 +24,10 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
   const [isWalletConnected, setIsWalletConnected] = useState(false);
-  const [walletAddress, setWalletAddress] = useState<string>("");
   const { toast } = useToast();
 
   useEffect(() => {
-    // Check if wallet is already connected
     checkWalletConnection();
-    // Listen for account changes
     if (window.ethereum) {
       window.ethereum.on('accountsChanged', handleAccountsChanged);
     }
@@ -48,7 +45,6 @@ const Index = () => {
         const accounts = await provider.listAccounts();
         if (accounts.length > 0) {
           setIsWalletConnected(true);
-          setWalletAddress(accounts[0].address);
         }
       } catch (error) {
         console.error("Error checking wallet connection:", error);
@@ -59,10 +55,8 @@ const Index = () => {
   const handleAccountsChanged = (accounts: string[]) => {
     if (accounts.length > 0) {
       setIsWalletConnected(true);
-      setWalletAddress(accounts[0]);
     } else {
       setIsWalletConnected(false);
-      setWalletAddress("");
     }
   };
 
@@ -82,7 +76,6 @@ const Index = () => {
       
       if (accounts.length > 0) {
         setIsWalletConnected(true);
-        setWalletAddress(accounts[0]);
         toast({
           title: "Wallet connected",
           description: "You can now send messages",
@@ -148,10 +141,7 @@ const Index = () => {
             variant={isWalletConnected ? "default" : "outline"}
           >
             <Wallet className="h-4 w-4 mr-2" />
-            {isWalletConnected 
-              ? `Connected: ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
-              : "Connect Wallet"
-            }
+            {isWalletConnected ? "Connected" : "Connect Wallet"}
           </Button>
         </header>
 
