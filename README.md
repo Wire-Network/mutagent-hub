@@ -1,69 +1,23 @@
-# Welcome to your Lovable project
-
 ## Project info
 
-**URL**: https://lovable.dev/projects/c37d03e2-32a7-408d-931e-e32ad0b72091
+NPCChain UI
+A front-end application that lets users chat with on-chain NPCs (Non-Player Characters) whose personas evolve over time. This UI integrates with:
 
-## How can I edit this code?
+A blockchain smart contract that stores references (IPFS CIDs) for each message and persona state.
+An off-chain AI agent that processes messages and updates the NPC’s persona in a verifiable, tamper-evident manner.
+Features
+Persona Selection
 
-There are several ways of editing your application.
+View a list of available NPCs (e.g., “Batman”) and see their current persona summary.
+Chat Interface
 
-**Use Lovable**
+Send messages to an NPC.
+Display the AI’s responses once finalized by the off-chain agent.
+Blockchain Integration
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/c37d03e2-32a7-408d-931e-e32ad0b72091) and start prompting.
+Connect a web3 wallet to submit messages on-chain (storing IPFS CIDs).
+Automatically listen for finalization events or poll the smart contract to fetch the AI’s response.
+IPFS Integration
 
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with .
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/c37d03e2-32a7-408d-931e-e32ad0b72091) and click on Share -> Publish.
-
-## I want to use a custom domain - is that possible?
-
-We don't support custom domains (yet). If you want to deploy your project under your own domain then we recommend using Netlify. Visit our docs for more details: [Custom domains](https://docs.lovable.dev/tips-tricks/custom-domain/)
+Messages are uploaded to IPFS before the transaction, ensuring decentralized storage.
+The UI can retrieve conversation history and persona data from IPFS via CIDs recorded on-chain.
