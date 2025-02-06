@@ -1,5 +1,3 @@
-## Project info
-
 # NPCChain UI
 A front-end application that lets users chat with on-chain NPCs (Non-Player Characters) whose personas evolve over time. This UI integrates with:
 
