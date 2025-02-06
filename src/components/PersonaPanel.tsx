@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface PersonaDetails {
   name: string;
