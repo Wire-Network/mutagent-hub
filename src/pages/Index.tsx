@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChatMessage } from "@/components/ChatMessage";
 import { MessageInput } from "@/components/MessageInput";
 import { PersonaPanel } from "@/components/PersonaPanel";
 import { Button } from "@/components/ui/button";
 import { Wallet } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { BrowserProvider } from "ethers";
 
 const mockPersona = {
   name: "Batman",
@@ -23,7 +24,79 @@ const Index = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
   const [isWalletConnected, setIsWalletConnected] = useState(false);
+  const [walletAddress, setWalletAddress] = useState<string>("");
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Check if wallet is already connected
+    checkWalletConnection();
+    // Listen for account changes
+    if (window.ethereum) {
+      window.ethereum.on('accountsChanged', handleAccountsChanged);
+    }
+    return () => {
+      if (window.ethereum) {
+        window.ethereum.removeListener('accountsChanged', handleAccountsChanged);
+      }
+    };
+  }, []);
+
+  const checkWalletConnection = async () => {
+    if (window.ethereum) {
+      try {
+        const provider = new BrowserProvider(window.ethereum);
+        const accounts = await provider.listAccounts();
+        if (accounts.length > 0) {
+          setIsWalletConnected(true);
+          setWalletAddress(accounts[0].address);
+        }
+      } catch (error) {
+        console.error("Error checking wallet connection:", error);
+      }
+    }
+  };
+
+  const handleAccountsChanged = (accounts: string[]) => {
+    if (accounts.length > 0) {
+      setIsWalletConnected(true);
+      setWalletAddress(accounts[0]);
+    } else {
+      setIsWalletConnected(false);
+      setWalletAddress("");
+    }
+  };
+
+  const connectWallet = async () => {
+    if (!window.ethereum) {
+      toast({
+        title: "Metamask not found",
+        description: "Please install Metamask to use this feature",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const provider = new BrowserProvider(window.ethereum);
+      const accounts = await provider.send("eth_requestAccounts", []);
+      
+      if (accounts.length > 0) {
+        setIsWalletConnected(true);
+        setWalletAddress(accounts[0]);
+        toast({
+          title: "Wallet connected",
+          description: "You can now send messages",
+        });
+      }
+    } catch (error) {
+      console.error("Error connecting wallet:", error);
+      toast({
+        title: "Connection failed",
+        description: "Failed to connect wallet. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
   const handleSendMessage = async (content: string) => {
     if (!isWalletConnected) {
@@ -59,14 +132,6 @@ const Index = () => {
     }, 2000);
   };
 
-  const toggleWallet = () => {
-    setIsWalletConnected(!isWalletConnected);
-    toast({
-      title: isWalletConnected ? "Wallet disconnected" : "Wallet connected",
-      description: isWalletConnected ? "You've been disconnected" : "You can now send messages",
-    });
-  };
-
   return (
     <div className="flex h-screen bg-background">
       <PersonaPanel
@@ -78,18 +143,24 @@ const Index = () => {
       <div className="flex-1 flex flex-col">
         <header className="flex items-center justify-between p-4 bg-card border-b">
           <h1 className="text-2xl font-bold">Chat with {mockPersona.name}</h1>
-          <Button onClick={toggleWallet} variant={isWalletConnected ? "default" : "outline"}>
+          <Button 
+            onClick={connectWallet} 
+            variant={isWalletConnected ? "default" : "outline"}
+          >
             <Wallet className="h-4 w-4 mr-2" />
-            {isWalletConnected ? "Connected" : "Connect Wallet"}
+            {isWalletConnected 
+              ? `Connected: ${walletAddress.slice(0, 6)}...${walletAddress.slice(-4)}`
+              : "Connect Wallet"
+            }
           </Button>
         </header>
 
-        <div className="chat-container">
+        <div className="flex-1 overflow-auto p-4 space-y-4">
           {messages.map((msg, idx) => (
             <ChatMessage key={idx} {...msg} />
           ))}
           {isLoading && (
-            <div className="flex items-center gap-2 text-muted-foreground">
+            <div className="flex items-center gap-2 text-muted-foreground p-4">
               <div className="animate-pulse">●</div>
               <div className="animate-pulse delay-100">●</div>
               <div className="animate-pulse delay-200">●</div>
