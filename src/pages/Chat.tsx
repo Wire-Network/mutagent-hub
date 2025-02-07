@@ -1,97 +1,159 @@
-
-import { useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
-import { ChatMessage } from "@/components/ChatMessage";
+import { useState, useEffect } from "react";
+import { useParams } from "react-router-dom";
+import { useWire, Message } from "@/hooks/useWire";
+import { useToast } from "@/components/ui/use-toast";
+import { useIpfs } from "@/hooks/useIpfs";
 import { MessageInput } from "@/components/MessageInput";
-import { PersonaPanel } from "@/components/PersonaPanel";
-import { useToast } from "@/hooks/use-toast";
-import { Button } from "@/components/ui/button";
-import { ArrowLeft } from "lucide-react";
+import { ChatMessage } from "@/components/ChatMessage";
+import config from '@/config';
 
-// Mock data - in a real app, this would be fetched based on the persona name
-const getPersonaDetails = (name: string) => ({
-  name: name.charAt(0).toUpperCase() + name.slice(1),
-  backstory: "The Dark Knight of Gotham City, a vigilante who fights crime using his intellect, martial arts skills, and advanced technology.",
-  traits: ["Detective", "Vigilante", "Billionaire", "Martial Artist"],
-});
+// Extend the Message type to include AI reply
+interface ExtendedMessage extends Message {
+    aiReply?: string | null;
+    messageText?: string | null;
+}
+
+// Polling interval in milliseconds
+const POLLING_INTERVAL = 5000;
 
 const Chat = () => {
-  const { personaName } = useParams();
-  const navigate = useNavigate();
-  const [messages, setMessages] = useState<Array<{
-    content: string;
-    isUser: boolean;
-    timestamp: string;
-    txHash?: string;
-    ipfsCid?: string;
-  }>>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
-  const { toast } = useToast();
-
-  const persona = getPersonaDetails(personaName || "");
-
-  const handleSendMessage = async (content: string) => {
-    setIsLoading(true);
-    console.log("Preparing to send message to WIRE network:", content);
+    const { personaName } = useParams<{ personaName: string }>();
+    const { toast } = useToast();
+    const { loading, error, getMessages, submitMessage } = useWire();
+    const { uploadMessage, fetchMessage } = useIpfs();
     
-    const userMessage = {
-      content,
-      isUser: true,
-      timestamp: new Date().toLocaleTimeString(),
-      ipfsCid: "QmExample...",
-      txHash: "0xExample...",
+    const [messages, setMessages] = useState<ExtendedMessage[]>([]);
+    const [submitting, setSubmitting] = useState(false);
+
+    useEffect(() => {
+        if (personaName) {
+            loadMessages();
+            // Set up polling for new messages
+            const interval = setInterval(loadMessages, POLLING_INTERVAL);
+            return () => clearInterval(interval);
+        }
+    }, [personaName]);
+
+    const loadMessages = async () => {
+        if (!personaName) return;
+        try {
+            const fetchedMessages = await getMessages(personaName);
+            
+            // Fetch message contents and AI replies for messages
+            const updatedMessages = await Promise.all(
+                fetchedMessages.map(async (message) => {
+                    const extendedMessage: ExtendedMessage = { ...message, aiReply: null, messageText: null };
+                    
+                    // Fetch original message text
+                    try {
+                        const messageData = await fetchMessage(message.message_cid);
+                        extendedMessage.messageText = messageData.text;
+                    } catch (error) {
+                        console.error('Error fetching message:', error);
+                    }
+
+                    // Fetch AI reply if available
+                    if (message.finalized && message.completion_cid) {
+                        try {
+                            const replyData = await fetchMessage(message.completion_cid);
+                            extendedMessage.aiReply = replyData.text;
+                        } catch (error) {
+                            console.error('Error fetching AI reply:', error);
+                        }
+                    }
+                    
+                    return extendedMessage;
+                })
+            );
+            
+            setMessages(updatedMessages);
+        } catch (error) {
+            console.error('Error loading messages:', error);
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: "Failed to load messages",
+            });
+        }
     };
-    setMessages((prev) => [...prev, userMessage]);
 
-    // TODO: Implement WIRE network transaction
-    setTimeout(() => {
-      const aiMessage = {
-        content: "I am vengeance. I am the night. I am Batman!",
-        isUser: false,
-        timestamp: new Date().toLocaleTimeString(),
-        ipfsCid: "QmExample2...",
-      };
-      setMessages((prev) => [...prev, aiMessage]);
-      setIsLoading(false);
-    }, 2000);
-  };
+    const handleSendMessage = async (messageText: string) => {
+        if (!personaName || submitting) return;
 
-  return (
-    <div className="flex h-screen bg-background">
-      <PersonaPanel
-        persona={persona}
-        isCollapsed={isPanelCollapsed}
-        onToggle={() => setIsPanelCollapsed(!isPanelCollapsed)}
-      />
-      
-      <div className="flex-1 flex flex-col">
-        <header className="flex items-center justify-between p-4 bg-card border-b">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
-              <ArrowLeft className="h-4 w-4" />
-            </Button>
-            <h1 className="text-2xl font-bold">Chat with {persona.name}</h1>
-          </div>
-        </header>
+        setSubmitting(true);
+        try {
+            // Format and upload message to IPFS
+            const messageCid = await uploadMessage({
+                text: messageText,
+                timestamp: new Date().toISOString(),
+                persona: personaName
+            });
 
-        <div className="flex-1 overflow-auto p-4 space-y-4">
-          {messages.map((msg, idx) => (
-            <ChatMessage key={idx} {...msg} />
-          ))}
-          {isLoading && (
-            <div className="flex items-center gap-2 text-muted-foreground p-4">
-              <div className="animate-pulse">●</div>
-              <div className="animate-pulse delay-100">●</div>
-              <div className="animate-pulse delay-200">●</div>
+            // Submit to blockchain
+            await submitMessage(
+                personaName,
+                messageCid,
+                config.wire.demoPrivateKey
+            );
+            
+            // Add optimistic update
+            const newMessageObj: ExtendedMessage = {
+                message_id: Date.now(),
+                message_cid: messageCid,
+                messageText: messageText,
+                created_at: new Date().toISOString(),
+                finalized: false,
+                completion_cid: null,
+                aiReply: null,
+                persona_name: personaName,
+                pre_persona_state_cid: '',
+                post_persona_state_cid: '',
+                user: config.wire.demoPrivateKey
+            };
+            
+            setMessages(prev => [...prev, newMessageObj]);
+            
+            // Trigger a message reload after a short delay
+            setTimeout(loadMessages, 1000);
+        } catch (e: any) {
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: e.message || "Failed to send message",
+            });
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    return (
+        <div className="container mx-auto px-4 py-8 max-w-4xl">
+            <div className="bg-card rounded-lg p-6 shadow-lg">
+                <h1 className="text-3xl font-bold mb-6 capitalize">
+                    Chat with {personaName}
+                </h1>
+
+                <div className="space-y-4 mb-6 h-[60vh] overflow-y-auto">
+                    {messages.map((message) => (
+                        <ChatMessage
+                            key={message.message_id}
+                            content={message.messageText || message.message_cid}
+                            isUser={true}
+                            timestamp={new Date(message.created_at).toLocaleString()}
+                            ipfsCid={message.message_cid}
+                            aiReply={message.aiReply}
+                            isPending={!message.finalized}
+                        />
+                    ))}
+                </div>
+
+                <MessageInput
+                    onSendMessage={handleSendMessage}
+                    isLoading={submitting}
+                />
             </div>
-          )}
         </div>
-
-        <MessageInput onSendMessage={handleSendMessage} isLoading={isLoading} />
-      </div>
-    </div>
-  );
+    );
 };
 
 export default Chat;

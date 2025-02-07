@@ -6,14 +6,43 @@ interface ChatMessageProps {
   timestamp: string;
   txHash?: string;
   ipfsCid?: string;
+  aiReply?: string | null;
+  isPending?: boolean;
 }
 
-export const ChatMessage = ({ content, isUser, timestamp, txHash, ipfsCid }: ChatMessageProps) => {
+export const ChatMessage = ({ 
+  content, 
+  isUser, 
+  timestamp, 
+  txHash, 
+  ipfsCid,
+  aiReply,
+  isPending 
+}: ChatMessageProps) => {
   return (
-    <div className={cn("flex flex-col", isUser ? "items-end" : "items-start")}>
-      <div className={cn("message-bubble", isUser ? "user-message" : "npc-message")}>
+    <div className={cn(
+      "flex flex-col",
+      isUser ? "items-end" : "items-start"
+    )}>
+      <div className={cn(
+        "message-bubble p-4 rounded-lg",
+        isUser ? "bg-primary/10" : "bg-muted"
+      )}>
         <p>{content}</p>
+        
+        {aiReply && (
+          <div className="mt-2 pt-2 border-t border-border">
+            <p className="text-primary">{aiReply}</p>
+          </div>
+        )}
+        
+        {isPending && (
+          <p className="text-sm text-muted-foreground italic mt-2">
+            Waiting for response...
+          </p>
+        )}
       </div>
+      
       <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
         <span>{timestamp}</span>
         {txHash && (
