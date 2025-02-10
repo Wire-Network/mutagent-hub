@@ -1,3 +1,4 @@
+
 import { WireService } from './wire-service';
 import { IPFSService } from './ipfs-service';
 
@@ -34,4 +35,4 @@ export class ChatService {
     async getMessageContent(messageCid: string): Promise<string> {
         return this.ipfsService.getText(messageCid);
     }
-} 
+}

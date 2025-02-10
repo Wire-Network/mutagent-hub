@@ -1,3 +1,4 @@
+
 import { create } from 'kubo-rpc-client';
 import config from '../config';
 
@@ -44,4 +45,4 @@ export class IPFSService {
             throw error;
         }
     }
-} 
+}

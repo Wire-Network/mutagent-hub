@@ -1,3 +1,4 @@
+
 const requireEnvVar = (name: string): string => {
     const value = import.meta.env[name];
     if (!value) {
@@ -18,4 +19,4 @@ export const config = {
     }
 } as const;
 
-export default config; 
+export default config;
