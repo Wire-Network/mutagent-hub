@@ -9,13 +9,13 @@ const requireEnvVar = (name: string): string => {
 
 export const config = {
     wire: {
-        endpoint: import.meta.env.WIRE_ENDPOINT || 'http://localhost:8888',
-        contract: import.meta.env.WIRE_CONTRACT || 'immutablenpc',
+        endpoint: import.meta.env.VITE_WIRE_ENDPOINT || 'https://testnet.wire.network',
+        contract: import.meta.env.VITE_WIRE_CONTRACT || 'immutablenpc',
         // Demo key - in production, this should be managed through a wallet
-        demoPrivateKey: import.meta.env.WIRE_DEMO_PRIVATE_KEY,
+        demoPrivateKey: import.meta.env.VITE_WIRE_DEMO_PRIVATE_KEY,
     },
     ipfs: {
-        endpoint: import.meta.env.IPFS_ENDPOINT || 'http://localhost:5001/api/v0',
+        endpoint: import.meta.env.VITE_IPFS_ENDPOINT || 'https://ipfs.infura.io:5001/api/v0',
     }
 } as const;
 
