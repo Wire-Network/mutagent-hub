@@ -1,3 +1,4 @@
+
 import {
     APIClient,
     FetchProvider,
@@ -16,7 +17,8 @@ import config from '../config';
 // Initialize WIRE client
 const wire = new APIClient({ provider: new FetchProvider(config.wire.endpoint) });
 
-type TableIndexType = 'i64' | 'i128' | 'i256' | 'float64' | 'float128' | 'sha256' | 'ripemd160';
+// Define valid table index types according to WIRE API
+type TableIndexType = 'i64' | 'i128' | 'float64' | 'float128' | 'sha256' | 'ripemd160';
 
 export interface GetRowsOptions {
     contract: string;
@@ -50,15 +52,14 @@ export class WireService {
                 code: options.contract,
                 scope: options.scope ?? options.contract,
                 table: options.table,
-                index_position: options.index_position as any,
+                index_position: options.index_position,
                 limit: options.limit ?? 100,
-                lower_bound: options.lower_bound as any,
-                upper_bound: options.upper_bound as any,
-                key_type: options.key_type as TableIndexType,
+                lower_bound: options.lower_bound,
+                upper_bound: options.upper_bound,
+                key_type: options.key_type || 'i64',
                 reverse: options.reverse,
             });
             
-            // For empty tables, ensure we return a valid response structure
             return {
                 rows: [],
                 more: false,
@@ -67,7 +68,6 @@ export class WireService {
             };
         } catch (e: any) {
             console.error('Error fetching rows:', e);
-            // If the table doesn't exist or is empty, return empty result instead of throwing
             if (e.details?.[0]?.message?.includes("Table does not exist") || 
                 e.details?.[0]?.message?.includes("Fail to retrieve")) {
                 return {
@@ -185,7 +185,7 @@ export class WireService {
         };
 
         if (personaName) {
-            options.index_position = 2; // Using the bypersona index
+            options.index_position = 2;
             options.key_type = 'i64';
             options.lower_bound = personaName;
             options.upper_bound = personaName;
