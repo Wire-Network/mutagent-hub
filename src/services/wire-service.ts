@@ -108,6 +108,28 @@ export class WireService {
         }
     }
 
+    async addPersona(
+        personaName: string,
+        initialStateCid: string
+    ) {
+        const action = {
+            account: config.wire.contract,
+            name: 'addpersona',
+            authorization: [
+                {
+                    actor: config.wire.contract,
+                    permission: 'active',
+                },
+            ],
+            data: {
+                persona_name: personaName,
+                initial_state_cid: initialStateCid,
+            },
+        };
+
+        return this.pushTransaction(action, config.wire.demoPrivateKey);
+    }
+
     // Specific contract actions
     async submitMessage(
         personaName: string,
@@ -157,4 +179,4 @@ export class WireService {
         const result = await this.getRows(options);
         return result.rows;
     }
-} 
+}
