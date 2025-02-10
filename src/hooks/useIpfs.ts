@@ -1,9 +1,8 @@
 
 import { create } from 'ipfs-http-client';
-import config from '@/config';
 
 // Initialize IPFS client and gateway
-const ipfs = create({ url: config.ipfs.endpoint });
+const ipfs = create();
 const IPFS_GATEWAY = 'https://ipfs.io';
 
 export interface IpfsMessage {

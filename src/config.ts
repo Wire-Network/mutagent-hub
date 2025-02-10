@@ -12,11 +12,9 @@ export const config = {
         endpoint: import.meta.env.VITE_WIRE_ENDPOINT || 'https://0b30-172-109-209-165.ngrok-free.app',
         contract: import.meta.env.VITE_WIRE_CONTRACT || 'immutablenpc',
         // Demo key - in production, this should be managed through a wallet
-        demoPrivateKey: import.meta.env.VITE_WIRE_DEMO_PRIVATE_KEY,
+        demoPrivateKey: import.meta.env.VITE_WIRE_DEMO_PRIVATE_KEY || '5JQafxYWQGypjHALsNNpcirrAYMWhxsjvU49dVYSJUC3qdZ2jq9'
     },
-    ipfs: {
-        endpoint: import.meta.env.IPFS_ENDPOINT || 'http://localhost:5001/api/v0',
-    }
+
 } as const;
 
 export default config;
