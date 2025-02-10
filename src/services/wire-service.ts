@@ -27,7 +27,7 @@ export interface GetRowsOptions {
     limit?: number;
     lower_bound?: string | number;
     upper_bound?: string | number;
-    key_type?: string;
+    key_type?: 'i64' | 'i128' | 'i256' | 'float64' | 'float128' | 'sha256' | 'ripemd160' | string;
     reverse?: boolean;
 }
 

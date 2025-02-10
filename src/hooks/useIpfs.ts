@@ -1,3 +1,4 @@
+
 import { create } from 'ipfs-http-client';
 import config from '@/config';
 
@@ -9,6 +10,9 @@ export interface IpfsMessage {
     text: string;
     timestamp: string;
     persona?: string;
+    name?: string;
+    backstory?: string;
+    traits?: string[];
 }
 
 export function useIpfs() {
@@ -33,4 +37,4 @@ export function useIpfs() {
         fetchMessage,
         ipfsGateway: IPFS_GATEWAY
     };
-} 
+}

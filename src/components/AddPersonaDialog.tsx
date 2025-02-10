@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -29,43 +28,43 @@ export function AddPersonaDialog() {
   const wireService = WireService.getInstance()
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setIsLoading(true)
+    e.preventDefault();
+    setIsLoading(true);
 
     try {
       // Create initial state object
-      const initialState = {
+      const initialState: IpfsMessage = {
+        text: backstory,
+        timestamp: new Date().toISOString(),
         name,
-        backstory,
         traits: traits.split(',').map(t => t.trim()),
-        timestamp: new Date().toISOString()
-      }
+      };
 
       // Upload initial state to IPFS
-      const initialStateCid = await uploadMessage(initialState)
+      const initialStateCid = await uploadMessage(initialState);
 
       // Add persona to blockchain
-      await wireService.addPersona(name.toLowerCase(), initialStateCid)
+      await wireService.addPersona(name.toLowerCase(), initialStateCid);
 
       toast({
         title: "Success",
         description: "Persona has been created successfully.",
-      })
-      setOpen(false)
-      setName("")
-      setBackstory("")
-      setTraits("")
+      });
+      setOpen(false);
+      setName("");
+      setBackstory("");
+      setTraits("");
     } catch (error: any) {
-      console.error('Error creating persona:', error)
+      console.error('Error creating persona:', error);
       toast({
         variant: "destructive",
         title: "Error",
         description: error.message || "Failed to create persona",
-      })
+      });
     } finally {
-      setIsLoading(false)
+      setIsLoading(false);
     }
-  }
+  };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
