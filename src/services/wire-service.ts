@@ -1,3 +1,4 @@
+
 import {
     APIClient,
     FetchProvider,
@@ -16,8 +17,7 @@ import config from '../config';
 // Initialize WIRE client
 const wire = new APIClient({ provider: new FetchProvider(config.wire.endpoint) });
 
-// Contract configuration
-const CONTRACT_ACCOUNT = "immutablenpc";
+type TableIndexType = 'i64' | 'i128' | 'i256' | 'float64' | 'float128' | 'sha256' | 'ripemd160';
 
 export interface GetRowsOptions {
     contract: string;
@@ -27,7 +27,7 @@ export interface GetRowsOptions {
     limit?: number;
     lower_bound?: string | number;
     upper_bound?: string | number;
-    key_type?: 'i64' | 'i128' | 'i256' | 'float64' | 'float128' | 'sha256' | 'ripemd160' | string;
+    key_type?: TableIndexType;
     reverse?: boolean;
 }
 

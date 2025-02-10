@@ -13,7 +13,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { UserRoundPlus } from "lucide-react"
 import { useState } from "react"
 import { useToast } from "./ui/use-toast"
-import { useIpfs } from "@/hooks/useIpfs"
+import { useIpfs, IpfsMessage } from "@/hooks/useIpfs"
 import { WireService } from "@/services/wire-service"
 import config from "@/config"
 
