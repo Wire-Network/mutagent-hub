@@ -1,4 +1,3 @@
-
 import {
     APIClient,
     FetchProvider,
@@ -55,7 +54,7 @@ export class WireService {
                 limit: options.limit ?? 100,
                 lower_bound: options.lower_bound as any,
                 upper_bound: options.upper_bound as any,
-                key_type: options.key_type as any,
+                key_type: options.key_type as TableIndexType,
                 reverse: options.reverse,
             });
             
@@ -147,7 +146,6 @@ export class WireService {
         return this.pushTransaction(action, config.wire.demoPrivateKey);
     }
 
-    // Specific contract actions
     async submitMessage(
         personaName: string,
         messageCid: string,
