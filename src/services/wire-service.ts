@@ -46,7 +46,7 @@ export class WireService {
 
     async getRows(options: GetRowsOptions): Promise<API.v1.GetTableRowsResponse> {
         try {
-            return await wire.v1.chain.get_table_rows({
+            const response = await wire.v1.chain.get_table_rows({
                 json: true,
                 code: options.contract,
                 scope: options.scope ?? options.contract,
@@ -58,8 +58,25 @@ export class WireService {
                 key_type: options.key_type as any,
                 reverse: options.reverse,
             });
+            
+            // For empty tables, ensure we return a valid response structure
+            return {
+                rows: [],
+                more: false,
+                next_key: "",
+                ...response
+            };
         } catch (e: any) {
             console.error('Error fetching rows:', e);
+            // If the table doesn't exist or is empty, return empty result instead of throwing
+            if (e.details?.[0]?.message?.includes("Table does not exist") || 
+                e.details?.[0]?.message?.includes("Fail to retrieve")) {
+                return {
+                    rows: [],
+                    more: false,
+                    next_key: ""
+                };
+            }
             throw e;
         }
     }

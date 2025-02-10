@@ -13,6 +13,7 @@ interface PersonaData {
   name: string;
   backstory: string;
   traits: string[];
+  imageUrl?: string;
 }
 
 const Index = () => {
@@ -25,13 +26,29 @@ const Index = () => {
     queryKey: ['personas'],
     queryFn: async () => {
       const rawPersonas = await wireService.getPersonas();
+      if (!rawPersonas.length) {
+        return [] as PersonaData[];
+      }
+      
       const enrichedPersonas = await Promise.all(
         rawPersonas.map(async (persona) => {
-          const stateData = await fetchMessage(persona.current_state_cid);
-          return {
-            ...stateData,
-            imageUrl: "/placeholder.svg"
-          };
+          try {
+            const stateData = await fetchMessage(persona.current_state_cid);
+            return {
+              name: persona.persona_name,
+              backstory: stateData.text || "",
+              traits: stateData.traits || [],
+              imageUrl: "/placeholder.svg"
+            } as PersonaData;
+          } catch (error) {
+            console.error('Error fetching persona data:', error);
+            return {
+              name: persona.persona_name,
+              backstory: "Failed to load persona data",
+              traits: [],
+              imageUrl: "/placeholder.svg"
+            } as PersonaData;
+          }
         })
       );
       return enrichedPersonas;
@@ -62,6 +79,10 @@ const Index = () => {
 
       {isLoading ? (
         <div className="text-center">Loading personas...</div>
+      ) : personas.length === 0 ? (
+        <div className="text-center text-muted-foreground">
+          No personas available. Create one to get started!
+        </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredPersonas.map((persona) => (

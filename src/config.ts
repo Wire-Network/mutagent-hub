@@ -9,7 +9,7 @@ const requireEnvVar = (name: string): string => {
 
 export const config = {
     wire: {
-        endpoint: import.meta.env.VITE_WIRE_ENDPOINT || 'https://testnet-lb.wire.foundation',
+        endpoint: import.meta.env.VITE_WIRE_ENDPOINT || 'http://192.168.50.17:8888',
         contract: import.meta.env.VITE_WIRE_CONTRACT || 'immutablenpc',
         // Demo key - in production, this should be managed through a wallet
         demoPrivateKey: import.meta.env.VITE_WIRE_DEMO_PRIVATE_KEY,
