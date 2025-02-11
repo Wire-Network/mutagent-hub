@@ -1,3 +1,4 @@
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
@@ -6,6 +7,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useIpfs } from "@/hooks/useIpfs";
 import { MessageInput } from "@/components/MessageInput";
 import { ChatMessage } from "@/components/ChatMessage";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import config from '@/config';
 
 // Extend the Message type to include AI reply
@@ -128,30 +130,39 @@ const Chat = () => {
     };
 
     return (
-        <div className="container mx-auto px-4 py-8 max-w-4xl">
-            <div className="bg-card rounded-lg p-6 shadow-lg">
-                <h1 className="text-3xl font-bold mb-6 capitalize">
-                    Chat with {personaName}
-                </h1>
+        <div className="flex flex-col h-screen bg-background">
+            <div className="flex-1 p-4 overflow-hidden">
+                <div className="max-w-4xl mx-auto bg-card rounded-lg shadow-lg h-full flex flex-col">
+                    <div className="p-4 border-b">
+                        <h1 className="text-2xl font-bold capitalize flex items-center gap-2">
+                            <span className="h-3 w-3 rounded-full bg-green-500 animate-pulse"></span>
+                            Chat with {personaName}
+                        </h1>
+                    </div>
+                    
+                    <ScrollArea className="flex-1 p-4">
+                        <div className="space-y-4">
+                            {messages.map((message) => (
+                                <ChatMessage
+                                    key={message.message_id}
+                                    content={message.messageText || message.message_cid}
+                                    isUser={true}
+                                    timestamp={new Date(message.created_at).toLocaleString()}
+                                    ipfsCid={message.message_cid}
+                                    aiReply={message.aiReply}
+                                    isPending={!message.finalized}
+                                />
+                            ))}
+                        </div>
+                    </ScrollArea>
 
-                <div className="space-y-4 mb-6 h-[60vh] overflow-y-auto">
-                    {messages.map((message) => (
-                        <ChatMessage
-                            key={message.message_id}
-                            content={message.messageText || message.message_cid}
-                            isUser={true}
-                            timestamp={new Date(message.created_at).toLocaleString()}
-                            ipfsCid={message.message_cid}
-                            aiReply={message.aiReply}
-                            isPending={!message.finalized}
+                    <div className="p-4 border-t">
+                        <MessageInput
+                            onSendMessage={handleSendMessage}
+                            isLoading={submitting}
                         />
-                    ))}
+                    </div>
                 </div>
-
-                <MessageInput
-                    onSendMessage={handleSendMessage}
-                    isLoading={submitting}
-                />
             </div>
         </div>
     );

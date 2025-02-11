@@ -26,34 +26,40 @@ export const ChatMessage = ({
       isUser ? "items-end" : "items-start"
     )}>
       <div className={cn(
-        "message-bubble p-4 rounded-lg",
-        isUser ? "bg-primary/10" : "bg-muted"
+        "max-w-[80%] rounded-lg shadow-sm",
+        isUser ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
       )}>
-        <p>{content}</p>
-        
-        {aiReply && (
-          <div className="mt-2 pt-2 border-t border-border">
-            <p className="text-primary">{aiReply}</p>
-          </div>
-        )}
-        
-        {isPending && (
-          <p className="text-sm text-muted-foreground italic mt-2">
-            Waiting for response...
-          </p>
-        )}
+        <div className="px-4 py-2 text-sm font-medium border-b border-border/10">
+          {isUser ? "You" : "Assistant"}
+        </div>
+        <div className="p-4">
+          <p className="whitespace-pre-wrap">{content}</p>
+          
+          {aiReply && (
+            <div className="mt-3 pt-3 border-t border-border/10">
+              <p className="whitespace-pre-wrap text-sm">{aiReply}</p>
+            </div>
+          )}
+          
+          {isPending && (
+            <div className="mt-2 flex items-center gap-2 text-sm opacity-70">
+              <div className="animate-spin h-3 w-3 border-2 border-current rounded-full border-t-transparent"></div>
+              <span>Waiting for response...</span>
+            </div>
+          )}
+        </div>
       </div>
       
-      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1 px-2">
         <span>{timestamp}</span>
         {txHash && (
           <a
             href={`https://etherscan.io/tx/${txHash}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:text-secondary transition-colors"
+            className="hover:text-primary transition-colors"
           >
-            Tx
+            View transaction
           </a>
         )}
         {ipfsCid && (
@@ -61,9 +67,9 @@ export const ChatMessage = ({
             href={`https://ipfs.io/ipfs/${ipfsCid}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="hover:text-secondary transition-colors"
+            className="hover:text-primary transition-colors"
           >
-            IPFS
+            View on IPFS
           </a>
         )}
       </div>
