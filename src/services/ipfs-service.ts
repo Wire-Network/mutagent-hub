@@ -4,10 +4,10 @@ import config from '../config';
 
 export class IPFSService {
     private static instance: IPFSService;
-    private ipfs;
+    private ipfsClient;
 
     private constructor() {
-        this.ipfs = create({ url: config.ipfs.endpoint });
+        this.ipfsClient = create({ url: 'https://ipfs.io/api/v0' });
     }
 
     static getInstance(): IPFSService {
@@ -19,7 +19,7 @@ export class IPFSService {
 
     async uploadText(text: string): Promise<string> {
         try {
-            const { cid } = await this.ipfs.add(text);
+            const { cid } = await this.ipfsClient.add(text);
             return cid.toString();
         } catch (error) {
             console.error('Error uploading to IPFS:', error);
@@ -29,7 +29,7 @@ export class IPFSService {
 
     async getText(cid: string): Promise<string> {
         try {
-            const stream = await this.ipfs.cat(cid);
+            const stream = await this.ipfsClient.cat(cid);
             const chunks = [];
             for await (const chunk of stream) {
                 chunks.push(chunk);
