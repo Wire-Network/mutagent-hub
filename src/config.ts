@@ -9,12 +9,11 @@ const requireEnvVar = (name: string): string => {
 
 export const config = {
     wire: {
-        endpoint: import.meta.env.VITE_WIRE_ENDPOINT || 'https://0b30-172-109-209-165.ngrok-free.app',
+        endpoint: import.meta.env.VITE_WIRE_ENDPOINT || 'https://a027-172-109-209-165.ngrok-free.app',
         contract: import.meta.env.VITE_WIRE_CONTRACT || 'immutablenpc',
         // Demo key - in production, this should be managed through a wallet
         demoPrivateKey: import.meta.env.VITE_WIRE_DEMO_PRIVATE_KEY || '5JQafxYWQGypjHALsNNpcirrAYMWhxsjvU49dVYSJUC3qdZ2jq9'
     },
-
 } as const;
 
 export default config;

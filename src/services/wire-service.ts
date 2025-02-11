@@ -1,3 +1,4 @@
+
 import {
     APIClient,
     FetchProvider,
@@ -16,19 +17,15 @@ import config from '../config';
 // Initialize WIRE client
 const wire = new APIClient({ provider: new FetchProvider(config.wire.endpoint) });
 
-// Define valid table index types according to WIRE API
-type TableIndexType = 'i64' | 'i128' | 'float64' | 'float128' | 'sha256' | 'ripemd160';
-type IndexPosition = 'primary' | 'secondary' | 'tertiary' | 'fourth' | 'fifth' | 'sixth' | 'seventh' | 'eighth' | 'ninth' | 'tenth';
-
 export interface GetRowsOptions {
-    contract: string;
-    scope?: string;
-    table: string;
-    index_position?: number;
+    contract: NameType;
+    scope?: NameType;
+    table: NameType;
+    index_position?: "primary" | "secondary" | "tertiary" | "fourth" | "fifth" | "sixth" | "seventh" | "eighth" | "ninth" | "tenth";
     limit?: number;
-    lower_bound?: string | number;
-    upper_bound?: string | number;
-    key_type?: TableIndexType;
+    lower_bound?: NameType | number | string;
+    upper_bound?: NameType | number | string;
+    key_type?: string;
     reverse?: boolean;
 }
 
@@ -45,22 +42,18 @@ export class WireService {
         return WireService.instance;
     }
 
-    async getRows(options: GetRowsOptions): Promise<API.v1.GetTableRowsResponse> {
+    async getRows<T = any>(options: GetRowsOptions): Promise<API.v1.GetTableRowsResponse> {
         try {
-            const indexPosition = options.index_position ? 
-                this.convertToIndexPosition(options.index_position) : 
-                'primary';
-
             const response = await wire.v1.chain.get_table_rows({
                 json: true,
                 code: options.contract,
                 scope: options.scope ?? options.contract,
                 table: options.table,
-                index_position: indexPosition,
+                index_position: options.index_position ?? "primary",
                 limit: options.limit ?? 100,
                 lower_bound: options.lower_bound?.toString() ?? '',
                 upper_bound: options.upper_bound?.toString() ?? '',
-                key_type: (options.key_type ?? 'i64') as TableIndexType,
+                key_type: options.key_type ?? 'uint64',
                 reverse: options.reverse,
             });
             
@@ -82,14 +75,6 @@ export class WireService {
             }
             throw e;
         }
-    }
-
-    private convertToIndexPosition(position: number): IndexPosition {
-        const positions: IndexPosition[] = [
-            'primary', 'secondary', 'tertiary', 'fourth', 
-            'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth'
-        ];
-        return positions[position - 1] || 'primary';
     }
 
     private async anyToAction(action: AnyAction | AnyAction[]): Promise<Action[]> {
@@ -197,8 +182,8 @@ export class WireService {
         };
 
         if (personaName) {
-            options.index_position = 2;
-            options.key_type = 'i64';
+            options.index_position = "secondary";
+            options.key_type = 'uint64';
             options.lower_bound = personaName;
             options.upper_bound = personaName;
         }
