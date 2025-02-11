@@ -1,3 +1,4 @@
+
 const requireEnvVar = (name: string): string => {
     const value = import.meta.env[name];
     if (!value) {
@@ -8,14 +9,11 @@ const requireEnvVar = (name: string): string => {
 
 export const config = {
     wire: {
-        endpoint: import.meta.env.WIRE_ENDPOINT || 'http://localhost:8888',
-        contract: import.meta.env.WIRE_CONTRACT || 'immutablenpc',
+        endpoint:'https://0509-172-109-209-165.ngrok-free.app',
+        contract:'immutablenpc',
         // Demo key - in production, this should be managed through a wallet
-        demoPrivateKey: import.meta.env.WIRE_DEMO_PRIVATE_KEY,
+        demoPrivateKey:'5J2NeCJ19LiTMrFSUfMX7bCd7CfZ3aEst1TD8ntdppVEwt1Vkwz'
     },
-    ipfs: {
-        endpoint: import.meta.env.IPFS_ENDPOINT || 'http://localhost:5001/api/v0',
-    }
 } as const;
 
-export default config; 
+export default config;

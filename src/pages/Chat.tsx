@@ -1,10 +1,13 @@
-import { useState, useEffect } from "react";
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { useState, useEffect, useRef } from "react";
 import { useParams } from "react-router-dom";
 import { useWire, Message } from "@/hooks/useWire";
 import { useToast } from "@/components/ui/use-toast";
 import { useIpfs } from "@/hooks/useIpfs";
 import { MessageInput } from "@/components/MessageInput";
 import { ChatMessage } from "@/components/ChatMessage";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import config from '@/config';
 
 // Extend the Message type to include AI reply
@@ -24,6 +27,7 @@ const Chat = () => {
     
     const [messages, setMessages] = useState<ExtendedMessage[]>([]);
     const [submitting, setSubmitting] = useState(false);
+    const localMessagesRef = useRef<{[key: string]: ExtendedMessage}>({});
 
     useEffect(() => {
         if (personaName) {
@@ -42,6 +46,14 @@ const Chat = () => {
             // Fetch message contents and AI replies for messages
             const updatedMessages = await Promise.all(
                 fetchedMessages.map(async (message) => {
+                    // If we have a local copy of this message, use it
+                    if (localMessagesRef.current[message.message_cid]) {
+                        return {
+                            ...localMessagesRef.current[message.message_cid],
+                            ...message // Update with any new blockchain data
+                        };
+                    }
+
                     const extendedMessage: ExtendedMessage = { ...message, aiReply: null, messageText: null };
                     
                     // Fetch original message text
@@ -66,7 +78,27 @@ const Chat = () => {
                 })
             );
             
-            setMessages(updatedMessages);
+            // Update local messages ref with the latest data
+            updatedMessages.forEach(msg => {
+                if (msg.message_cid) {
+                    localMessagesRef.current[msg.message_cid] = msg;
+                }
+            });
+
+            // Merge with any pending local messages that aren't yet in the blockchain
+            const allMessages = [...updatedMessages];
+            Object.values(localMessagesRef.current).forEach(localMsg => {
+                if (!updatedMessages.find(m => m.message_cid === localMsg.message_cid)) {
+                    allMessages.push(localMsg);
+                }
+            });
+
+            // Sort messages by timestamp
+            allMessages.sort((a, b) => 
+                new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+            );
+
+            setMessages(allMessages);
         } catch (error) {
             console.error('Error loading messages:', error);
             toast({
@@ -89,14 +121,7 @@ const Chat = () => {
                 persona: personaName
             });
 
-            // Submit to blockchain
-            await submitMessage(
-                personaName,
-                messageCid,
-                config.wire.demoPrivateKey
-            );
-            
-            // Add optimistic update
+            // Create new message object
             const newMessageObj: ExtendedMessage = {
                 message_id: Date.now(),
                 message_cid: messageCid,
@@ -110,8 +135,17 @@ const Chat = () => {
                 post_persona_state_cid: '',
                 user: config.wire.demoPrivateKey
             };
-            
+
+            // Store in local ref and update state
+            localMessagesRef.current[messageCid] = newMessageObj;
             setMessages(prev => [...prev, newMessageObj]);
+
+            // Submit to blockchain
+            await submitMessage(
+                personaName,
+                messageCid,
+                config.wire.demoPrivateKey
+            );
             
             // Trigger a message reload after a short delay
             setTimeout(loadMessages, 1000);
@@ -127,30 +161,39 @@ const Chat = () => {
     };
 
     return (
-        <div className="container mx-auto px-4 py-8 max-w-4xl">
-            <div className="bg-card rounded-lg p-6 shadow-lg">
-                <h1 className="text-3xl font-bold mb-6 capitalize">
-                    Chat with {personaName}
-                </h1>
+        <div className="flex flex-col h-screen bg-background">
+            <div className="flex-1 p-4 overflow-hidden">
+                <div className="max-w-4xl mx-auto bg-card rounded-lg shadow-lg h-full flex flex-col">
+                    <div className="p-4 border-b">
+                        <h1 className="text-2xl font-bold capitalize flex items-center gap-2">
+                            <span className="h-3 w-3 rounded-full bg-green-500 animate-pulse"></span>
+                            Chat with {personaName}
+                        </h1>
+                    </div>
+                    
+                    <ScrollArea className="flex-1 p-4">
+                        <div className="space-y-4">
+                            {messages.map((message) => (
+                                <ChatMessage
+                                    key={message.message_id}
+                                    content={message.messageText || message.message_cid}
+                                    isUser={true}
+                                    timestamp={new Date(message.created_at).toLocaleString()}
+                                    ipfsCid={message.message_cid}
+                                    aiReply={message.aiReply}
+                                    isPending={!message.finalized}
+                                />
+                            ))}
+                        </div>
+                    </ScrollArea>
 
-                <div className="space-y-4 mb-6 h-[60vh] overflow-y-auto">
-                    {messages.map((message) => (
-                        <ChatMessage
-                            key={message.message_id}
-                            content={message.messageText || message.message_cid}
-                            isUser={true}
-                            timestamp={new Date(message.created_at).toLocaleString()}
-                            ipfsCid={message.message_cid}
-                            aiReply={message.aiReply}
-                            isPending={!message.finalized}
+                    <div className="p-4 border-t">
+                        <MessageInput
+                            onSendMessage={handleSendMessage}
+                            isLoading={submitting}
                         />
-                    ))}
+                    </div>
                 </div>
-
-                <MessageInput
-                    onSendMessage={handleSendMessage}
-                    isLoading={submitting}
-                />
             </div>
         </div>
     );

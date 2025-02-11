@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
     APIClient,
     FetchProvider,
@@ -15,20 +16,17 @@ import config from '../config';
 
 // Initialize WIRE client
 const wire = new APIClient({ provider: new FetchProvider(config.wire.endpoint) });
-
-// Contract configuration
-const CONTRACT_ACCOUNT = "immutablenpc";
-
 export interface GetRowsOptions {
-    contract: string;
-    scope?: string;
-    table: string;
-    index_position?: string | number;
+    contract: NameType;
+    scope?: NameType;
+    table: NameType;
+    index_position?: "primary" | "secondary" | "tertiary" | "fourth" | "fifth" | "sixth" | "seventh" | "eighth" | "ninth" | "tenth" | undefined;
     limit?: number;
-    lower_bound?: string | number;
-    upper_bound?: string | number;
-    key_type?: string;
+    lower_bound?: NameType | number | string ;
+    upper_bound?: NameType | number | string ;
+    key_type?: NameType | number | string ;
     reverse?: boolean;
+    [key: string]: any; // Add this line
 }
 
 export class WireService {
@@ -44,27 +42,37 @@ export class WireService {
         return WireService.instance;
     }
 
-    async getRows(options: GetRowsOptions): Promise<API.v1.GetTableRowsResponse> {
+    async getRows<T = any>(options: GetRowsOptions): Promise<API.v1.GetTableRowsResponse<any, T>> {
         try {
-            return await wire.v1.chain.get_table_rows({
+            // Trim string fields
+            for (const key in options) {
+                if (typeof options[key] === 'string') {
+                    options[key] = (options[key] as string).trim();
+            }
+            }
+            if (!options.key_type) options.key_type = 'uint64'; // default to int keytype
+        
+            const response = await wire.v1.chain.get_table_rows({
                 json: true,
                 code: options.contract,
-                scope: options.scope ?? options.contract,
+                scope: options.scope !== undefined ? options.scope : options.contract,
                 table: options.table,
-                index_position: options.index_position as any,
+                index_position: options.index_position,
                 limit: options.limit ?? 100,
-                lower_bound: options.lower_bound as any,
-                upper_bound: options.upper_bound as any,
+                lower_bound: options.lower_bound,
+                upper_bound: options.upper_bound,
                 key_type: options.key_type as any,
                 reverse: options.reverse,
             });
+
+            return response as API.v1.GetTableRowsResponse<any, T>;
         } catch (e: any) {
-            console.error('Error fetching rows:', e);
+            console.error('getRows error:', e.error?.details?.[0]?.message);
             throw e;
         }
     }
 
-    private async anyToAction(action: AnyAction | AnyAction[]): Promise<Action[]> {
+    async anyToAction(action: AnyAction | AnyAction[]): Promise<Action[]> {
         if (!Array.isArray(action)) action = [action];
         const actions: Action[] = [];
         
@@ -81,34 +89,48 @@ export class WireService {
     async pushTransaction(
         action: AnyAction | AnyAction[],
         privateKeyStr: string
-    ): Promise<API.v1.PushTransactionResponse> {
+    ): Promise<API.v1.PushTransactionResponse | undefined> {
         try {
             const actions = await this.anyToAction(action);
             const info = await wire.v1.chain.get_info();
             const header = info.getTransactionHeader();
             const transaction = Transaction.from({ ...header, actions });
             const digest = transaction.signingDigest(info.chain_id);
-
-            const pvtKey = PrivateKey.from(privateKeyStr);
-            const signature = pvtKey.signDigest(digest).toString();
-
-            const signedTrx = SignedTransaction.from({
-                ...transaction,
-                signatures: [signature]
-            });
-
+    
+            const pvt_key = PrivateKey.from(privateKeyStr);
+            const signature = pvt_key.signDigest(digest).toString();
+    
+            const signedTrx = SignedTransaction.from({ ...transaction, signatures: [signature] });
             return await wire.v1.chain.push_transaction(signedTrx);
         } catch (e) {
-            if (e instanceof APIError) {
-                console.error("Transaction error:", e.details[0].message);
-            } else {
-                console.error("Transaction error:", e);
-            }
+            if (e instanceof APIError) console.log("PushTransaction error:", e.details[0].message);
+            else console.log("PushTransaction error:", e);
             throw e;
         }
     }
 
-    // Specific contract actions
+    async addPersona(
+        personaName: string,
+        initialStateCid: string
+    ) {
+        const action = {
+            account: config.wire.contract,
+            name: 'addpersona',
+            authorization: [
+                {
+                    actor: config.wire.contract,
+                    permission: 'active',
+                },
+            ],
+            data: {
+                persona_name: personaName,
+                initial_state_cid: initialStateCid,
+            },
+        };
+
+        return this.pushTransaction(action, config.wire.demoPrivateKey);
+    }
+
     async submitMessage(
         personaName: string,
         messageCid: string,
@@ -148,8 +170,8 @@ export class WireService {
         };
 
         if (personaName) {
-            options.index_position = 2; // Using the bypersona index
-            options.key_type = 'i64';
+            options.index_position = "secondary";
+            options.key_type = 'name';
             options.lower_bound = personaName;
             options.upper_bound = personaName;
         }
@@ -157,4 +179,4 @@ export class WireService {
         const result = await this.getRows(options);
         return result.rows;
     }
-} 
+}
