@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import {
     APIClient,
     FetchProvider,
@@ -15,17 +16,17 @@ import config from '../config';
 
 // Initialize WIRE client
 const wire = new APIClient({ provider: new FetchProvider(config.wire.endpoint) });
-
 export interface GetRowsOptions {
     contract: NameType;
     scope?: NameType;
     table: NameType;
-    index_position?: "primary" | "secondary" | "tertiary" | "fourth" | "fifth" | "sixth" | "seventh" | "eighth" | "ninth" | "tenth";
+    index_position?: "primary" | "secondary" | "tertiary" | "fourth" | "fifth" | "sixth" | "seventh" | "eighth" | "ninth" | "tenth" | undefined;
     limit?: number;
-    lower_bound?: NameType | number | string;
-    upper_bound?: NameType | number | string;
-    key_type?: NameType | number | string;
+    lower_bound?: NameType | number | string ;
+    upper_bound?: NameType | number | string ;
+    key_type?: NameType | number | string ;
     reverse?: boolean;
+    [key: string]: any; // Add this line
 }
 
 export class WireService {
@@ -47,7 +48,7 @@ export class WireService {
             for (const key in options) {
                 if (typeof options[key] === 'string') {
                     options[key] = (options[key] as string).trim();
-                }
+            }
             }
             if (!options.key_type) options.key_type = 'uint64'; // default to int keytype
         
