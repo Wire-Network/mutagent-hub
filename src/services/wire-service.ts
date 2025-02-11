@@ -1,4 +1,3 @@
-
 import {
     APIClient,
     FetchProvider,
@@ -25,7 +24,7 @@ export interface GetRowsOptions {
     limit?: number;
     lower_bound?: NameType | number | string;
     upper_bound?: NameType | number | string;
-    key_type?: string;
+    key_type?: NameType | number | string;
     reverse?: boolean;
 }
 
@@ -42,42 +41,37 @@ export class WireService {
         return WireService.instance;
     }
 
-    async getRows<T = any>(options: GetRowsOptions): Promise<API.v1.GetTableRowsResponse> {
+    async getRows<T = any>(options: GetRowsOptions): Promise<API.v1.GetTableRowsResponse<any, T>> {
         try {
+            // Trim string fields
+            for (const key in options) {
+                if (typeof options[key] === 'string') {
+                    options[key] = (options[key] as string).trim();
+                }
+            }
+            if (!options.key_type) options.key_type = 'uint64'; // default to int keytype
+        
             const response = await wire.v1.chain.get_table_rows({
                 json: true,
                 code: options.contract,
-                scope: options.scope ?? options.contract,
+                scope: options.scope !== undefined ? options.scope : options.contract,
                 table: options.table,
-                index_position: options.index_position ?? "primary",
+                index_position: options.index_position,
                 limit: options.limit ?? 100,
-                lower_bound: options.lower_bound?.toString() ?? '',
-                upper_bound: options.upper_bound?.toString() ?? '',
-                key_type: options.key_type ?? 'uint64',
+                lower_bound: options.lower_bound,
+                upper_bound: options.upper_bound,
+                key_type: options.key_type as any,
                 reverse: options.reverse,
             });
-            
-            return {
-                rows: [],
-                more: false,
-                next_key: "",
-                ...response
-            };
+
+            return response as API.v1.GetTableRowsResponse<any, T>;
         } catch (e: any) {
-            console.error('Error fetching rows:', e);
-            if (e.details?.[0]?.message?.includes("Table does not exist") || 
-                e.details?.[0]?.message?.includes("Fail to retrieve")) {
-                return {
-                    rows: [],
-                    more: false,
-                    next_key: ""
-                };
-            }
+            console.error('getRows error:', e.error?.details?.[0]?.message);
             throw e;
         }
     }
 
-    private async anyToAction(action: AnyAction | AnyAction[]): Promise<Action[]> {
+    async anyToAction(action: AnyAction | AnyAction[]): Promise<Action[]> {
         if (!Array.isArray(action)) action = [action];
         const actions: Action[] = [];
         
@@ -94,29 +88,22 @@ export class WireService {
     async pushTransaction(
         action: AnyAction | AnyAction[],
         privateKeyStr: string
-    ): Promise<API.v1.PushTransactionResponse> {
+    ): Promise<API.v1.PushTransactionResponse | undefined> {
         try {
             const actions = await this.anyToAction(action);
             const info = await wire.v1.chain.get_info();
             const header = info.getTransactionHeader();
             const transaction = Transaction.from({ ...header, actions });
             const digest = transaction.signingDigest(info.chain_id);
-
-            const pvtKey = PrivateKey.from(privateKeyStr);
-            const signature = pvtKey.signDigest(digest).toString();
-
-            const signedTrx = SignedTransaction.from({
-                ...transaction,
-                signatures: [signature]
-            });
-
+    
+            const pvt_key = PrivateKey.from(privateKeyStr);
+            const signature = pvt_key.signDigest(digest).toString();
+    
+            const signedTrx = SignedTransaction.from({ ...transaction, signatures: [signature] });
             return await wire.v1.chain.push_transaction(signedTrx);
         } catch (e) {
-            if (e instanceof APIError) {
-                console.error("Transaction error:", e.details[0].message);
-            } else {
-                console.error("Transaction error:", e);
-            }
+            if (e instanceof APIError) console.log("PushTransaction error:", e.details[0].message);
+            else console.log("PushTransaction error:", e);
             throw e;
         }
     }
@@ -183,7 +170,7 @@ export class WireService {
 
         if (personaName) {
             options.index_position = "secondary";
-            options.key_type = 'uint64';
+            options.key_type = 'name';
             options.lower_bound = personaName;
             options.upper_bound = personaName;
         }
