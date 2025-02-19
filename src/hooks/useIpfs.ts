@@ -12,7 +12,7 @@ export interface IpfsMessage {
     text: string;
     timestamp: string;
     persona?: string;
-    name?: string;
+    user?: string;
     backstory?: string;
     traits?: string[];
     history?: boolean;  // Flag to indicate if this is a conversation history message

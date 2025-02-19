@@ -36,7 +36,7 @@ export function AddPersonaDialog() {
       const initialState: IpfsMessage = {
         text: backstory,
         timestamp: new Date().toISOString(),
-        name,
+        persona: name,
         traits: traits.split(',').map(t => t.trim()),
       };
 
