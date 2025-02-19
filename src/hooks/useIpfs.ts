@@ -1,4 +1,4 @@
-import { create } from 'ipfs-http-client';
+import { create } from 'kubo-rpc-client';      
 
 // Initialize IPFS client and gateway
 const ipfs = create({
@@ -12,9 +12,10 @@ export interface IpfsMessage {
     text: string;
     timestamp: string;
     persona?: string;
-    name?: string;
+    user?: string;
     backstory?: string;
     traits?: string[];
+    history?: boolean;  // Flag to indicate if this is a conversation history message
 }
 
 export function useIpfs() {
