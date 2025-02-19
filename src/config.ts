@@ -9,8 +9,7 @@ const requireEnvVar = (name: string): string => {
 
 export const config = {
     wire: {
-        endpoint:'http://192.168.50.17:8888',
-        contract:'immutablenpc',
+        endpoint:'https://jovi.gitgo.app',
         // Demo key - in production, this should be managed through a wallet
         demoPrivateKey:'5JQafxYWQGypjHALsNNpcirrAYMWhxsjvU49dVYSJUC3qdZ2jq9'
     },
