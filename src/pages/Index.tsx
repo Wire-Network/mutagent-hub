@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
@@ -8,6 +8,8 @@ import { AddPersonaDialog } from "@/components/AddPersonaDialog";
 import { useQuery } from "@tanstack/react-query";
 import { WireService } from "@/services/wire-service";
 import { useIpfs } from "@/hooks/useIpfs";
+import { useAuth } from "@/contexts/AuthContext";
+import { Navigate } from "react-router-dom";
 
 interface PersonaData {
   name: string;
@@ -21,6 +23,12 @@ const Index = () => {
   const navigate = useNavigate();
   const wireService = WireService.getInstance();
   const { fetchMessage } = useIpfs();
+  const { isAuthenticated } = useAuth();
+
+  // Redirect to login if not authenticated
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
 
   const { data: personas = [], isLoading } = useQuery({
     queryKey: ['personas'],
@@ -29,11 +37,24 @@ const Index = () => {
       if (!rawPersonas.length) {
         return [] as PersonaData[];
       }
-      
+
       const enrichedPersonas = await Promise.all(
         rawPersonas.map(async (persona) => {
           try {
-            const stateData = await fetchMessage(persona.current_state_cid);
+            // Get detailed persona info
+            const personaDetails = await wireService.getPersona(persona.persona_name);
+            console.log(personaDetails);
+            if (!personaDetails.initial_state_cid) {
+              console.warn(`No state CID found for persona ${persona.persona_name}`);
+              return {
+                name: persona.persona_name,
+                backstory: "Persona state not initialized",
+                traits: [],
+                imageUrl: "/placeholder.svg"
+              } as PersonaData;
+            }
+
+            const stateData = await fetchMessage(personaDetails.initial_state_cid);
             return {
               name: persona.persona_name,
               backstory: stateData.text || "",
@@ -41,7 +62,7 @@ const Index = () => {
               imageUrl: "/placeholder.svg"
             } as PersonaData;
           } catch (error) {
-            console.error('Error fetching persona data:', error);
+            console.error(`Error fetching persona data for ${persona.persona_name}:`, error);
             return {
               name: persona.persona_name,
               backstory: "Failed to load persona data",
