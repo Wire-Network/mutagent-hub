@@ -1,4 +1,5 @@
-import { useState } from "react";
+
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
@@ -7,6 +8,8 @@ import { AddPersonaDialog } from "@/components/AddPersonaDialog";
 import { useQuery } from "@tanstack/react-query";
 import { WireService } from "@/services/wire-service";
 import { useIpfs } from "@/hooks/useIpfs";
+import { useAuth } from "@/contexts/AuthContext";
+import { Navigate } from "react-router-dom";
 
 interface PersonaData {
   name: string;
@@ -20,6 +23,12 @@ const Index = () => {
   const navigate = useNavigate();
   const wireService = WireService.getInstance();
   const { fetchMessage } = useIpfs();
+  const { isAuthenticated } = useAuth();
+
+  // Redirect to login if not authenticated
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
 
   const { data: personas = [], isLoading } = useQuery({
     queryKey: ['personas'],
