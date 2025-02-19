@@ -1,4 +1,3 @@
-
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -6,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { useState } from "react";
+import { WireService } from "@/services/wire-service";
 
 const Login = () => {
     const [accountName, setAccountName] = useState("");
@@ -14,6 +14,7 @@ const Login = () => {
     const { setCredentials, isAuthenticated } = useAuth();
     const { toast } = useToast();
     const navigate = useNavigate();
+    const wireService = WireService.getInstance();
 
     useEffect(() => {
         if (isAuthenticated) {
@@ -26,7 +27,17 @@ const Login = () => {
         setIsLoading(true);
 
         try {
-            await setCredentials(accountName.trim(), privateKey.trim());
+            const trimmedAccount = accountName.trim();
+            const trimmedKey = privateKey.trim();
+
+            // Verify account and private key
+            const isValid = await wireService.verifyAccount(trimmedAccount, trimmedKey);
+            
+            if (!isValid) {
+                throw new Error("Invalid account name or private key");
+            }
+
+            await setCredentials(trimmedAccount, trimmedKey);
             toast({
                 title: "Success",
                 description: "Successfully logged in!",
