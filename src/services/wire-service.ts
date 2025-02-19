@@ -215,7 +215,7 @@ export class WireService {
             name: 'submitmsg',
             authorization: [
                 {
-                    actor: personaName,
+                    actor: userAccount,
                     permission: 'active',
                 },
             ],
@@ -313,5 +313,26 @@ export class WireService {
         }
 
         return result;
+    }
+
+    async verifyAccount(accountName: string, privateKey: string): Promise<boolean> {
+        try {
+            // Get account info
+            const accountInfo = await wire.v1.chain.get_account(accountName);
+            
+            // Convert private key to public key
+            const pvtKey = PrivateKey.from(privateKey);
+            const publicKey = pvtKey.toPublic().toString();
+
+            // Check if the public key exists in active permission
+            const activePermission = accountInfo.permissions.find(p => p.perm_name.toString() === 'active');
+            if (!activePermission) return false;
+
+            // Check if the derived public key matches any key in the active permission
+            return activePermission.required_auth.keys.some(k => k.key.toString() === publicKey);
+        } catch (error) {
+            console.error('Account verification error:', error);
+            return false;
+        }
     }
 }
