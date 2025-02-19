@@ -1,3 +1,4 @@
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useRef } from "react";
 import { useParams, Navigate } from "react-router-dom";
@@ -51,9 +52,9 @@ const Chat = () => {
     }, [personaName, isAuthenticated, accountName]);
 
     const loadMessages = async () => {
-        if (!personaName || !accountName) return;
+        if (!personaName) return;
         try {
-            const fetchedMessages = await getMessages(personaName, accountName);
+            const fetchedMessages = await getMessages(personaName); // Fixed: removed second argument
             
             // Fetch message contents and AI replies for messages
             const updatedMessages = await Promise.all(
