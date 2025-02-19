@@ -14,6 +14,8 @@ import {
 } from '@wireio/core';
 import config from '../config';
 
+import { ContractFactory } from '../contract-factory';
+
 // Initialize WIRE client
 const wire = new APIClient({ provider: new FetchProvider(config.wire.endpoint) });
 export interface GetRowsOptions {
@@ -88,7 +90,7 @@ export class WireService {
 
     async pushTransaction(
         action: AnyAction | AnyAction[],
-        privateKeyStr: string
+        privateKey?: string
     ): Promise<API.v1.PushTransactionResponse | undefined> {
         try {
             const actions = await this.anyToAction(action);
@@ -97,7 +99,8 @@ export class WireService {
             const transaction = Transaction.from({ ...header, actions });
             const digest = transaction.signingDigest(info.chain_id);
     
-            const pvt_key = PrivateKey.from(privateKeyStr);
+            // Use provided private key or fall back to demo key
+            const pvt_key = PrivateKey.from(privateKey || config.wire.demoPrivateKey);
             const signature = pvt_key.signDigest(digest).toString();
     
             const signedTrx = SignedTransaction.from({ ...transaction, signatures: [signature] });
@@ -111,72 +114,204 @@ export class WireService {
 
     async addPersona(
         personaName: string,
+        backstory: string,
         initialStateCid: string
     ) {
-        const action = {
-            account: config.wire.contract,
-            name: 'addpersona',
+        // Instantiate the ContractFactory.
+        // Note: Here we use the personaName as the new account name.
+        const factory = new ContractFactory(
+            config.wire.endpoint,
+            personaName,
+            PrivateKey.from(config.wire.demoPrivateKey)
+        );
+
+        // Retrieve the persona contract's WASM and ABI from configuration.
+        // (Make sure these values are defined in your config file, for example in config.persona)
+        const wasmHexString = config.persona.wasm;
+        const serializedAbiHex = config.persona.abi;
+
+        // Step 1: Deploy the new persona contract.
+        const deployResult = await factory.deployContract(
+            personaName,
+            wasmHexString,
+            serializedAbiHex
+        );
+        console.log(`Contract deployed for ${personaName}. Transaction ID: ${deployResult.transaction_id}`);
+
+        // Step 2: Add policy to the new persona account.
+        const addPolicyAction = {
+            account: "sysio.roa",
+            name: "addpolicy",
             authorization: [
                 {
-                    actor: config.wire.contract,
-                    permission: 'active',
+                    actor: "nodeowner1",
+                    permission: "active",
+                },
+            ],
+            data: {
+                owner: personaName,
+                issuer: "nodeowner1",
+                net_weight: "0.0300 SYS",
+                cpu_weight: "0.0300 SYS",
+                ram_weight: "0.0030 SYS",
+                time_block: 1,
+                network_gen: 0
+            },
+        };
+        const addPolicyResponse = await this.pushTransaction(addPolicyAction);
+        console.log(`Policy added to the persona account. Transaction ID: ${addPolicyResponse.transaction_id}`);
+
+        // Step 2: Store the newly created persona in the personas table.
+        const storePersonaAction = {
+            account: "allpersonas",
+            name: "storepersona",
+            authorization: [
+                {
+                    actor: "allpersonas",
+                    permission: "active",
                 },
             ],
             data: {
                 persona_name: personaName,
+            },
+        };
+        const storePersonaResponse = await this.pushTransaction(storePersonaAction);
+        console.log(`Persona stored in the personas table. Transaction ID: ${storePersonaResponse.transaction_id}`);
+
+        // Step 3: Initialize the persona contract by calling the "initpersona" action.
+        const initPersonaAction = {
+            account: personaName,
+            name: 'initpersona',
+            authorization: [
+                {
+                    actor: personaName,
+                    permission: 'active',
+                },
+            ],
+            data: {
                 initial_state_cid: initialStateCid,
             },
         };
 
-        return this.pushTransaction(action, config.wire.demoPrivateKey);
+        // Make sure that the pushTransaction method is available (it might need to be made public).
+        const initResponse = await this.pushTransaction(initPersonaAction);
+        console.log(`initpersona action complete for ${personaName}. Transaction ID: ${initResponse.transaction_id}`);
+
+        return {
+            deployResult,
+            initResponse,
+        };
     }
 
     async submitMessage(
         personaName: string,
+        userAccount: string,
+        preStateCid: string,
         messageCid: string,
-        privateKey: string
+        fullConvoHistoryCid: string,
     ) {
         const action = {
-            account: config.wire.contract,
+            account: personaName,
             name: 'submitmsg',
             authorization: [
                 {
-                    actor: config.wire.contract,
+                    actor: personaName,
                     permission: 'active',
                 },
             ],
             data: {
-                persona_name: personaName,
-                message_cid: messageCid,
+                account_name: userAccount,
+                pre_state_cid: preStateCid,
+                msg_cid: messageCid,
+                full_convo_history_cid: fullConvoHistoryCid,
             },
         };
 
-        return this.pushTransaction(action, privateKey);
+        return this.pushTransaction(action);
     }
 
     async getPersonas(): Promise<any[]> {
         const result = await this.getRows({
-            contract: config.wire.contract,
-            table: 'personas'
+            contract: "allpersonas",
+            table: "personas"
         });
+        console.log('Raw personas from allpersonas:', result.rows);
         return result.rows;
     }
 
-    async getMessages(personaName?: string, limit = 100): Promise<any[]> {
-        const options: GetRowsOptions = {
-            contract: config.wire.contract,
-            table: 'messages',
-            limit
+    async getPersona(personaName: string) {
+        try {
+            // Get persona info from the persona's contract
+            const personaInfo = await this.getRows({
+                contract: personaName,
+                table: "personainfo",
+                scope: personaName,  // This is the contract's own scope
+                limit: 1,
+                lower_bound: 1,  // The ID is always 1 as per the contract
+                upper_bound: 1
+            });
+
+            if (personaInfo.rows.length === 0) {
+                throw new Error('Persona info not found');
+            }
+
+            // Add debug logging
+            console.log('Raw persona info:', personaInfo.rows[0]);
+
+            return {
+                persona_name: personaName,
+                initial_state_cid: personaInfo.rows[0].initial_state_cid
+            };
+        } catch (error) {
+            console.error(`Error fetching persona ${personaName}:`, error);
+            throw error;
+        }
+    }
+
+    async getMessages(personaName: string, userAccount?: string): Promise<{
+        conversation?: { account_name: string; full_convo_history_cid: string };
+        messages: any[];
+    }> {
+        const result: {
+            conversation?: { account_name: string; full_convo_history_cid: string };
+            messages: any[];
+        } = {
+            messages: []
         };
 
-        if (personaName) {
-            options.index_position = "secondary";
-            options.key_type = 'name';
-            options.lower_bound = personaName;
-            options.upper_bound = personaName;
+        // If userAccount is provided, get their specific messages
+        if (userAccount) {
+            const messagesResult = await this.getRows({
+                contract: personaName,
+                scope: userAccount,
+                table: "messages"
+            });
+            result.messages = messagesResult.rows;
+
+            // Get the conversation history for this user
+            const convosResult = await this.getRows({
+                contract: personaName,
+                scope: personaName,
+                table: "convos",
+                lower_bound: userAccount,
+                upper_bound: userAccount,
+                key_type: "name",
+                limit: 1
+            });
+            
+            if (convosResult.rows.length > 0) {
+                result.conversation = convosResult.rows[0];
+            }
+        } else {
+            // If no userAccount provided, get all conversations
+            const convosResult = await this.getRows({
+                contract: personaName,
+                scope: personaName,
+                table: "convos"
+            });
+            result.conversation = convosResult.rows[0];
         }
 
-        const result = await this.getRows(options);
-        return result.rows;
+        return result;
     }
 }

@@ -1,14 +1,16 @@
-
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useRef } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, Navigate } from "react-router-dom";
 import { useWire, Message } from "@/hooks/useWire";
 import { useToast } from "@/components/ui/use-toast";
 import { useIpfs } from "@/hooks/useIpfs";
 import { MessageInput } from "@/components/MessageInput";
 import { ChatMessage } from "@/components/ChatMessage";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { LoginDialog } from "@/components/LoginDialog";
+import { useAuth } from "@/contexts/AuthContext";
 import config from '@/config';
+import { WireService } from "@/services/wire-service";
 
 // Extend the Message type to include AI reply
 interface ExtendedMessage extends Message {
@@ -24,24 +26,34 @@ const Chat = () => {
     const { toast } = useToast();
     const { loading, error, getMessages, submitMessage } = useWire();
     const { uploadMessage, fetchMessage } = useIpfs();
+    const wireService = WireService.getInstance();
+    const { isAuthenticated, accountName } = useAuth();
     
     const [messages, setMessages] = useState<ExtendedMessage[]>([]);
     const [submitting, setSubmitting] = useState(false);
+    const [showLogin, setShowLogin] = useState(false);
     const localMessagesRef = useRef<{[key: string]: ExtendedMessage}>({});
 
     useEffect(() => {
-        if (personaName) {
+        // Show login dialog if not authenticated
+        if (!isAuthenticated) {
+            setShowLogin(true);
+        }
+    }, [isAuthenticated]);
+
+    useEffect(() => {
+        if (personaName && isAuthenticated && accountName) {
             loadMessages();
             // Set up polling for new messages
             const interval = setInterval(loadMessages, POLLING_INTERVAL);
             return () => clearInterval(interval);
         }
-    }, [personaName]);
+    }, [personaName, isAuthenticated, accountName]);
 
     const loadMessages = async () => {
-        if (!personaName) return;
+        if (!personaName || !accountName) return;
         try {
-            const fetchedMessages = await getMessages(personaName);
+            const fetchedMessages = await getMessages(personaName, accountName);
             
             // Fetch message contents and AI replies for messages
             const updatedMessages = await Promise.all(
@@ -110,15 +122,31 @@ const Chat = () => {
     };
 
     const handleSendMessage = async (messageText: string) => {
-        if (!personaName || submitting) return;
+        if (!personaName || !accountName || submitting) return;
 
         setSubmitting(true);
         try {
+            // Get the persona's current state
+            const persona = await wireService.getPersona(personaName);
+            if (!persona.initial_state_cid) {
+                throw new Error('Persona state not initialized');
+            }
+
             // Format and upload message to IPFS
             const messageCid = await uploadMessage({
                 text: messageText,
                 timestamp: new Date().toISOString(),
-                persona: personaName
+                persona: personaName,
+                user: accountName
+            });
+
+            // Create or update conversation history
+            const convoHistoryCid = await uploadMessage({
+                text: messageText,
+                timestamp: new Date().toISOString(),
+                persona: personaName,
+                user: accountName,
+                history: true
             });
 
             // Create new message object
@@ -131,20 +159,22 @@ const Chat = () => {
                 completion_cid: null,
                 aiReply: null,
                 persona_name: personaName,
-                pre_persona_state_cid: '',
+                pre_persona_state_cid: persona.initial_state_cid,
                 post_persona_state_cid: '',
-                user: config.wire.demoPrivateKey
+                user: accountName
             };
 
             // Store in local ref and update state
             localMessagesRef.current[messageCid] = newMessageObj;
             setMessages(prev => [...prev, newMessageObj]);
 
-            // Submit to blockchain
+            // Submit to blockchain with all required parameters
             await submitMessage(
                 personaName,
+                accountName,
+                persona.initial_state_cid,
                 messageCid,
-                config.wire.demoPrivateKey
+                convoHistoryCid
             );
             
             // Trigger a message reload after a short delay
@@ -160,42 +190,53 @@ const Chat = () => {
         }
     };
 
-    return (
-        <div className="flex flex-col h-screen bg-background">
-            <div className="flex-1 p-4 overflow-hidden">
-                <div className="max-w-4xl mx-auto bg-card rounded-lg shadow-lg h-full flex flex-col">
-                    <div className="p-4 border-b">
-                        <h1 className="text-2xl font-bold capitalize flex items-center gap-2">
-                            <span className="h-3 w-3 rounded-full bg-green-500 animate-pulse"></span>
-                            Chat with {personaName}
-                        </h1>
-                    </div>
-                    
-                    <ScrollArea className="flex-1 p-4">
-                        <div className="space-y-4">
-                            {messages.map((message) => (
-                                <ChatMessage
-                                    key={message.message_id}
-                                    content={message.messageText || message.message_cid}
-                                    isUser={true}
-                                    timestamp={new Date(message.created_at).toLocaleString()}
-                                    ipfsCid={message.message_cid}
-                                    aiReply={message.aiReply}
-                                    isPending={!message.finalized}
-                                />
-                            ))}
-                        </div>
-                    </ScrollArea>
+    // Redirect to home if not authenticated and user dismissed login
+    if (!isAuthenticated && !showLogin) {
+        return <Navigate to="/" />;
+    }
 
-                    <div className="p-4 border-t">
-                        <MessageInput
-                            onSendMessage={handleSendMessage}
-                            isLoading={submitting}
-                        />
+    return (
+        <>
+            <LoginDialog 
+                open={showLogin} 
+                onOpenChange={setShowLogin}
+            />
+            <div className="flex flex-col h-screen bg-background">
+                <div className="flex-1 p-4 overflow-hidden">
+                    <div className="max-w-4xl mx-auto bg-card rounded-lg shadow-lg h-full flex flex-col">
+                        <div className="p-4 border-b">
+                            <h1 className="text-2xl font-bold capitalize flex items-center gap-2">
+                                <span className="h-3 w-3 rounded-full bg-green-500 animate-pulse"></span>
+                                Chat with {personaName}
+                            </h1>
+                        </div>
+                        
+                        <ScrollArea className="flex-1 p-4">
+                            <div className="space-y-4">
+                                {messages.map((message) => (
+                                    <ChatMessage
+                                        key={message.message_id}
+                                        content={message.messageText || message.message_cid}
+                                        isUser={true}
+                                        timestamp={new Date(message.created_at).toLocaleString()}
+                                        ipfsCid={message.message_cid}
+                                        aiReply={message.aiReply}
+                                        isPending={!message.finalized}
+                                    />
+                                ))}
+                            </div>
+                        </ScrollArea>
+
+                        <div className="p-4 border-t">
+                            <MessageInput
+                                onSendMessage={handleSendMessage}
+                                isLoading={submitting || loading}
+                            />
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
+        </>
     );
 };
 
