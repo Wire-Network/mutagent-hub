@@ -1,27 +1,25 @@
-import { useState } from "react";
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-} from "@/components/ui/dialog";
+
+import { useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
-import { useAuth } from "@/contexts/AuthContext";
+import { useState } from "react";
 
-interface LoginDialogProps {
-    open: boolean;
-    onOpenChange: (open: boolean) => void;
-}
-
-export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
+const Login = () => {
     const [accountName, setAccountName] = useState("");
     const [privateKey, setPrivateKey] = useState("");
     const [isLoading, setIsLoading] = useState(false);
-    const { setCredentials } = useAuth();
+    const { setCredentials, isAuthenticated } = useAuth();
     const { toast } = useToast();
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        if (isAuthenticated) {
+            navigate('/');
+        }
+    }, [isAuthenticated, navigate]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -33,7 +31,7 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
                 title: "Success",
                 description: "Successfully logged in!",
             });
-            onOpenChange(false);
+            navigate('/');
         } catch (error) {
             toast({
                 variant: "destructive",
@@ -46,18 +44,21 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
     };
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent>
-                <form onSubmit={handleSubmit}>
-                    <DialogHeader>
-                        <DialogTitle>Login with WIRE</DialogTitle>
-                        <DialogDescription>
-                            Enter your WIRE account name and private key to start chatting with personas.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                        <div className="grid gap-2">
-                            <label htmlFor="accountName">Account Name</label>
+        <div className="min-h-screen flex items-center justify-center bg-background">
+            <div className="w-full max-w-md space-y-8 p-8 bg-card rounded-lg shadow-lg">
+                <div className="text-center">
+                    <h2 className="text-3xl font-bold">Welcome Back</h2>
+                    <p className="mt-2 text-muted-foreground">
+                        Please sign in to continue
+                    </p>
+                </div>
+
+                <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+                    <div className="space-y-4">
+                        <div>
+                            <label htmlFor="accountName" className="block text-sm font-medium mb-2">
+                                Account Name
+                            </label>
                             <Input
                                 id="accountName"
                                 value={accountName}
@@ -66,8 +67,11 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
                                 required
                             />
                         </div>
-                        <div className="grid gap-2">
-                            <label htmlFor="privateKey">Private Key</label>
+
+                        <div>
+                            <label htmlFor="privateKey" className="block text-sm font-medium mb-2">
+                                Private Key
+                            </label>
                             <Input
                                 id="privateKey"
                                 type="password"
@@ -78,13 +82,18 @@ export function LoginDialog({ open, onOpenChange }: LoginDialogProps) {
                             />
                         </div>
                     </div>
-                    <div className="flex justify-end">
-                        <Button type="submit" disabled={isLoading}>
-                            {isLoading ? "Logging in..." : "Login"}
-                        </Button>
-                    </div>
+
+                    <Button
+                        type="submit"
+                        className="w-full"
+                        disabled={isLoading}
+                    >
+                        {isLoading ? "Signing in..." : "Sign in"}
+                    </Button>
                 </form>
-            </DialogContent>
-        </Dialog>
+            </div>
+        </div>
     );
-} 
+};
+
+export default Login;

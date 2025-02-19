@@ -1,14 +1,12 @@
-
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useRef } from "react";
-import { useParams, Navigate } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useWire, Message } from "@/hooks/useWire";
 import { useToast } from "@/components/ui/use-toast";
 import { useIpfs } from "@/hooks/useIpfs";
 import { MessageInput } from "@/components/MessageInput";
 import { ChatMessage } from "@/components/ChatMessage";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { LoginDialog } from "@/components/LoginDialog";
 import { useAuth } from "@/contexts/AuthContext";
 import config from '@/config';
 import { WireService } from "@/services/wire-service";
@@ -28,28 +26,20 @@ const Chat = () => {
     const { loading, error, getMessages, submitMessage } = useWire();
     const { uploadMessage, fetchMessage } = useIpfs();
     const wireService = WireService.getInstance();
-    const { isAuthenticated, accountName } = useAuth();
+    const { accountName } = useAuth();
     
     const [messages, setMessages] = useState<ExtendedMessage[]>([]);
     const [submitting, setSubmitting] = useState(false);
-    const [showLogin, setShowLogin] = useState(false);
     const localMessagesRef = useRef<{[key: string]: ExtendedMessage}>({});
 
     useEffect(() => {
-        // Show login dialog if not authenticated
-        if (!isAuthenticated) {
-            setShowLogin(true);
-        }
-    }, [isAuthenticated]);
-
-    useEffect(() => {
-        if (personaName && isAuthenticated && accountName) {
+        if (personaName && accountName) {
             loadMessages();
             // Set up polling for new messages
             const interval = setInterval(loadMessages, POLLING_INTERVAL);
             return () => clearInterval(interval);
         }
-    }, [personaName, isAuthenticated, accountName]);
+    }, [personaName, accountName]);
 
     const loadMessages = async () => {
         if (!personaName) return;
@@ -191,53 +181,42 @@ const Chat = () => {
         }
     };
 
-    // Redirect to home if not authenticated and user dismissed login
-    if (!isAuthenticated && !showLogin) {
-        return <Navigate to="/" />;
-    }
-
     return (
-        <>
-            <LoginDialog 
-                open={showLogin} 
-                onOpenChange={setShowLogin}
-            />
-            <div className="flex flex-col h-screen bg-background">
-                <div className="flex-1 p-4 overflow-hidden">
-                    <div className="max-w-4xl mx-auto bg-card rounded-lg shadow-lg h-full flex flex-col">
-                        <div className="p-4 border-b">
-                            <h1 className="text-2xl font-bold capitalize flex items-center gap-2">
-                                <span className="h-3 w-3 rounded-full bg-green-500 animate-pulse"></span>
-                                Chat with {personaName}
-                            </h1>
+        <div className="flex flex-col h-screen bg-background">
+            <div className="flex-1 p-4 overflow-hidden">
+                <div className="max-w-4xl mx-auto bg-card rounded-lg shadow-lg h-full flex flex-col">
+                    <div className="p-4 border-b">
+                        <h1 className="text-2xl font-bold capitalize flex items-center gap-2">
+                            <span className="h-3 w-3 rounded-full bg-green-500 animate-pulse"></span>
+                            Chat with {personaName}
+                        </h1>
+                    </div>
+                    
+                    <ScrollArea className="flex-1 p-4">
+                        <div className="space-y-4">
+                            {messages.map((message) => (
+                                <ChatMessage
+                                    key={message.message_id}
+                                    content={message.messageText || message.message_cid}
+                                    isUser={true}
+                                    timestamp={new Date(message.created_at).toLocaleString()}
+                                    ipfsCid={message.message_cid}
+                                    aiReply={message.aiReply}
+                                    isPending={!message.finalized}
+                                />
+                            ))}
                         </div>
-                        
-                        <ScrollArea className="flex-1 p-4">
-                            <div className="space-y-4">
-                                {messages.map((message) => (
-                                    <ChatMessage
-                                        key={message.message_id}
-                                        content={message.messageText || message.message_cid}
-                                        isUser={true}
-                                        timestamp={new Date(message.created_at).toLocaleString()}
-                                        ipfsCid={message.message_cid}
-                                        aiReply={message.aiReply}
-                                        isPending={!message.finalized}
-                                    />
-                                ))}
-                            </div>
-                        </ScrollArea>
+                    </ScrollArea>
 
-                        <div className="p-4 border-t">
-                            <MessageInput
-                                onSendMessage={handleSendMessage}
-                                isLoading={submitting || loading}
-                            />
-                        </div>
+                    <div className="p-4 border-t">
+                        <MessageInput
+                            onSendMessage={handleSendMessage}
+                            isLoading={submitting || loading}
+                        />
                     </div>
                 </div>
             </div>
-        </>
+        </div>
     );
 };
 
