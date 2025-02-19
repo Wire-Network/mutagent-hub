@@ -44,7 +44,7 @@ export function AddPersonaDialog() {
       const initialStateCid = await uploadMessage(initialState);
 
       // Add persona to blockchain
-      await wireService.addPersona(name.toLowerCase(), initialStateCid);
+      await wireService.addPersona(name.toLowerCase(), backstory, initialStateCid);
 
       toast({
         title: "Success",
@@ -54,7 +54,7 @@ export function AddPersonaDialog() {
       setName("");
       setBackstory("");
       setTraits("");
-    } catch (error: any) {
+    } catch (error: any ) {
       console.error('Error creating persona:', error);
       toast({
         variant: "destructive",
