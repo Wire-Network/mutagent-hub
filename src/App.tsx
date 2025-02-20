@@ -5,7 +5,6 @@ import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import Index from '@/pages/Index';
 import Chat from '@/pages/Chat';
 import Login from '@/pages/Login';
-import { HeliaProvider } from './providers/HeliaProvider'
 
 const queryClient = new QueryClient();
 
@@ -48,12 +47,10 @@ function App() {
     return (
         <QueryClientProvider client={queryClient}>
             <AuthProvider>
-                <HeliaProvider>
-                    <Router>
-                        <AppRoutes />
-                        <Toaster />
-                    </Router>
-                </HeliaProvider>
+                <Router>
+                    <AppRoutes />
+                    <Toaster />
+                </Router>
             </AuthProvider>
         </QueryClientProvider>
     );

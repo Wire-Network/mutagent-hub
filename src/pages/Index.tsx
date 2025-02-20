@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
@@ -9,7 +9,7 @@ import { usePersonaContent } from "@/hooks/usePersonaContent";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { PersonaData } from '@/types/persona';
+import { PersonaData, PersonaState } from '@/types/persona';
 import { useWire } from '@/hooks/useWire';
 
 const Index = () => {
@@ -55,12 +55,13 @@ const Index = () => {
               };
             }
 
-            const stateData = await getContent(personaInfo.initial_state_cid);
+            const stateData = await getContent(personaInfo.initial_state_cid) as PersonaState;
+            console.log('Persona state data:', stateData);
             
             return {
               name: persona.persona_name,
-              backstory: stateData.text || "",
-              traits: stateData.traits || [],
+              backstory: stateData.data.text,
+              traits: stateData.data.traits || [],
               imageUrl: "/placeholder.svg"
             };
           } catch (error) {
@@ -148,20 +149,22 @@ const Index = () => {
                 alt={persona.name}
                 className="w-32 h-32 mx-auto mb-4 rounded-full"
               />
-              <h2 className="text-2xl font-bold mb-2">{persona.name}</h2>
+              <h2 className="text-2xl font-bold mb-2 capitalize">{persona.name}</h2>
               <p className="text-muted-foreground mb-4 line-clamp-3">
                 {persona.backstory}
               </p>
-              <div className="flex flex-wrap gap-2 mb-4">
-                {persona.traits.map((trait) => (
-                  <span
-                    key={trait}
-                    className="bg-accent px-2 py-1 rounded-full text-xs"
-                  >
-                    {trait}
-                  </span>
-                ))}
-              </div>
+              {persona.traits && persona.traits.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {persona.traits.map((trait, index) => (
+                    <span
+                      key={`${trait}-${index}`}
+                      className="bg-accent/50 px-2 py-1 rounded-full text-xs"
+                    >
+                      {trait}
+                    </span>
+                  ))}
+                </div>
+              )}
               <Button
                 className="w-full"
                 onClick={() => navigate(`/chat/${persona.name.toLowerCase()}`)}

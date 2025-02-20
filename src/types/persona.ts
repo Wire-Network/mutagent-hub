@@ -7,10 +7,21 @@ export interface PersonaData {
     name: string;
     backstory: string;
     traits: string[];
-    imageUrl?: string;
+    imageUrl: string;
 }
 
 export interface RawPersona {
     persona_name: string;
-    // Add any other fields that come from the blockchain
+}
+
+export interface PersonaState {
+    data: {
+        text: string;
+        timestamp: string;
+        persona: string;
+        traits: string[];
+        user?: string;
+        history?: boolean;
+    };
+    contentType: string;
 }
