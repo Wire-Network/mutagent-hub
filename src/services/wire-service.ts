@@ -117,28 +117,35 @@ export class WireService {
         backstory: string,
         initialStateCid: string
     ) {
-        // Instantiate the ContractFactory.
-        // Note: Here we use the personaName as the new account name.
+        console.log('Starting contract deployment for persona:', personaName);
+        
+        // Instantiate the ContractFactory
+        console.log('Creating ContractFactory instance...');
         const factory = new ContractFactory(
             config.wire.endpoint,
             personaName,
             PrivateKey.from(config.wire.demoPrivateKey)
         );
 
-        // Retrieve the persona contract's WASM and ABI from configuration.
-        // (Make sure these values are defined in your config file, for example in config.persona)
+        // Get contract code
         const wasmHexString = config.persona.wasm;
         const serializedAbiHex = config.persona.abi;
+        console.log('Contract code loaded');
 
-        // Step 1: Deploy the new persona contract.
+        // Step 1: Deploy the new persona contract
+        console.log('Deploying persona contract...');
         const deployResult = await factory.deployContract(
             personaName,
             wasmHexString,
             serializedAbiHex
         );
-        console.log(`Contract deployed for ${personaName}. Transaction ID: ${deployResult.transaction_id}`);
+        console.log('Contract deployed successfully:', {
+            transaction_id: deployResult.transaction_id,
+            persona: personaName
+        });
 
-        // Step 2: Add policy to the new persona account.
+        // Step 2: Add policy to the new persona account
+        console.log('Adding resource policy...');
         const addPolicyAction = {
             account: "sysio.roa",
             name: "addpolicy",
@@ -158,10 +165,14 @@ export class WireService {
                 network_gen: 0
             },
         };
-        const addPolicyResponse = await this.pushTransaction(addPolicyAction);
-        console.log(`Policy added to the persona account. Transaction ID: ${addPolicyResponse.transaction_id}`);
 
-        // Step 2: Store the newly created persona in the personas table.
+        const policyResponse = await this.pushTransaction(addPolicyAction);
+        console.log('Resource policy added:', {
+            transaction_id: policyResponse?.transaction_id
+        });
+
+        // Step 3: Store the persona in the allpersonas contract
+        console.log('Storing persona in allpersonas contract...');
         const storePersonaAction = {
             account: "allpersonas",
             name: "storepersona",
@@ -176,9 +187,13 @@ export class WireService {
             },
         };
         const storePersonaResponse = await this.pushTransaction(storePersonaAction);
-        console.log(`Persona stored in the personas table. Transaction ID: ${storePersonaResponse.transaction_id}`);
+        console.log('Persona stored in allpersonas:', {
+            transaction_id: storePersonaResponse?.transaction_id,
+            persona_name: personaName
+        });
 
-        // Step 3: Initialize the persona contract by calling the "initpersona" action.
+        // Step 4: Initialize the persona contract
+        console.log('Initializing persona contract...');
         const initPersonaAction = {
             account: personaName,
             name: 'initpersona',
@@ -193,13 +208,16 @@ export class WireService {
             },
         };
 
-        // Make sure that the pushTransaction method is available (it might need to be made public).
         const initResponse = await this.pushTransaction(initPersonaAction);
-        console.log(`initpersona action complete for ${personaName}. Transaction ID: ${initResponse.transaction_id}`);
+        console.log('Persona contract initialized:', {
+            transaction_id: initResponse?.transaction_id,
+            initial_state_cid: initialStateCid
+        });
 
         return {
             deployResult,
             initResponse,
+            storePersonaResponse
         };
     }
 
@@ -245,9 +263,9 @@ export class WireService {
             const personaInfo = await this.getRows({
                 contract: personaName,
                 table: "personainfo",
-                scope: personaName,  // This is the contract's own scope
+                scope: personaName,
                 limit: 1,
-                lower_bound: 1,  // The ID is always 1 as per the contract
+                lower_bound: 1,
                 upper_bound: 1
             });
 
