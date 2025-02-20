@@ -1,5 +1,6 @@
-
 import { cn } from "@/lib/utils";
+import { useEffect, useState } from "react";
+import { useIpfs, IpfsMessage } from "@/hooks/useIpfs";
 
 interface ChatMessageProps {
   content: string;
@@ -20,6 +21,21 @@ export const ChatMessage = ({
   aiReply,
   isPending 
 }: ChatMessageProps) => {
+  const [ipfsContent, setIpfsContent] = useState<IpfsMessage | null>(null);
+  const { fetchMessage } = useIpfs();
+
+  useEffect(() => {
+    if (ipfsCid) {
+      fetchMessage(ipfsCid)
+        .then(message => {
+          setIpfsContent(message);
+        })
+        .catch(error => {
+          console.error('Failed to fetch IPFS content:', error);
+        });
+    }
+  }, [ipfsCid, fetchMessage]);
+
   return (
     <div className={cn(
       "flex flex-col",
@@ -34,6 +50,26 @@ export const ChatMessage = ({
         </div>
         <div className="p-4">
           <p className="whitespace-pre-wrap">{content}</p>
+          
+          {ipfsContent && (
+            <div className="mt-3 pt-3 border-t border-border/10">
+              <p className="text-sm text-muted-foreground">
+                Original Message: {ipfsContent.text}
+              </p>
+              {ipfsContent.traits && (
+                <div className="mt-2 flex flex-wrap gap-1">
+                  {ipfsContent.traits.map((trait, index) => (
+                    <span 
+                      key={index}
+                      className="text-xs bg-accent/50 px-2 py-0.5 rounded-full"
+                    >
+                      {trait}
+                    </span>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
           
           {aiReply && (
             <div className="mt-3 pt-3 border-t border-border/10">

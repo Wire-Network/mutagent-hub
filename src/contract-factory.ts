@@ -93,11 +93,14 @@ export class ContractFactory {
      * @param privateKey The private key used for signing the transaction and setting up the new account's keys.
      */
     async deployContract(
-        newAccountName: string, 
-        wasmHexString: string, 
-        serializedAbiHex: string,
+        accountName: string,
+        wasmHexString: string,
+        serializedAbiHex: string
     ): Promise<API.v1.PushTransactionResponse> {
+        console.log(`Starting contract deployment process for account: ${accountName}`);
+        
         try {
+            console.log('Creating account...');
             // 1. Prepare the creator's authorization
             const creatorAuth = [
                 PermissionLevel.from({ 
@@ -120,7 +123,7 @@ export class ContractFactory {
                 authorization: sysioAuth,
                 data: {
                     creator: "sysio",   
-                    name: newAccountName,
+                    name: accountName,
                     owner: {
                         threshold: 1,
                         keys: [{
@@ -143,7 +146,7 @@ export class ContractFactory {
             };
 
             // 3. Push new account creation in a separate transaction.
-            console.log(`Creating account: ${newAccountName}`);
+            console.log(`Creating account: ${accountName}`);
             const createAccountResult = await this.pushTransaction(newAccountAction);
             console.log('New account created successfully:', createAccountResult.transaction_id);
 
@@ -157,7 +160,7 @@ export class ContractFactory {
                 name: 'setcode',
                 authorization: creatorAuth,
                 data: {
-                    account: newAccountName,
+                    account: accountName,
                     vmtype: 0,
                     vmversion: 0,
                     code: wasmHexString
@@ -170,21 +173,20 @@ export class ContractFactory {
                 name: 'setabi',
                 authorization: creatorAuth,
                 data: {
-                    account: newAccountName,
+                    account: accountName,
                     abi: serializedAbiHex
                 }
             };
 
             // 8. Push the contract deployment transaction.
             const deployActions: AnyAction[] = [setcodeAction, setabiAction];
-            console.log(`Deploying contract to account: ${newAccountName}`);
+            console.log(`Deploying contract to account: ${accountName}`);
             const deployResult = await this.pushTransaction(deployActions);
             console.log('Contract deployed successfully:', deployResult.transaction_id);
 
             return deployResult;
-
         } catch (error) {
-            console.error('Error deploying contract with new account creation:', error);
+            console.error('Contract deployment failed:', error);
             throw error;
         }
     }

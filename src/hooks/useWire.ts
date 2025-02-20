@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { WireService } from '../services/wire-service';
 import { useToast } from '@/components/ui/use-toast';
+import { PersonaInfo, RawPersona } from '@/types/persona';
 
 export interface Persona {
     persona_name: string;
@@ -36,15 +37,28 @@ export function useWire() {
         console.error('WIRE Error:', e);
     }, [toast]);
 
-    const getPersonas = useCallback(async () => {
+    const getPersonas = useCallback(async (): Promise<RawPersona[]> => {
         setLoading(true);
         setError(null);
         try {
             const personas = await wireService.getPersonas();
-            return personas as Persona[];
+            return personas;
         } catch (e) {
             handleError(e);
             return [];
+        } finally {
+            setLoading(false);
+        }
+    }, [handleError, wireService]);
+
+    const getPersonaInfo = useCallback(async (personaName: string): Promise<PersonaInfo | null> => {
+        setLoading(true);
+        setError(null);
+        try {
+            return await wireService.getPersona(personaName);
+        } catch (e) {
+            handleError(e);
+            return null;
         } finally {
             setLoading(false);
         }
@@ -91,6 +105,7 @@ export function useWire() {
         loading,
         error,
         getPersonas,
+        getPersonaInfo,
         getMessages,
         submitMessage
     };

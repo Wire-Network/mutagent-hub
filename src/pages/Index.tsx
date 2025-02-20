@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,23 +5,18 @@ import { Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AddPersonaDialog } from "@/components/AddPersonaDialog";
 import { useQuery } from "@tanstack/react-query";
-import { WireService } from "@/services/wire-service";
-import { useIpfs } from "@/hooks/useIpfs";
+import { usePersonaContent } from "@/hooks/usePersonaContent";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
-
-interface PersonaData {
-  name: string;
-  backstory: string;
-  traits: string[];
-  imageUrl?: string;
-}
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { PersonaData } from '@/types/persona';
+import { useWire } from '@/hooks/useWire';
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const navigate = useNavigate();
-  const wireService = WireService.getInstance();
-  const { fetchMessage } = useIpfs();
+  const { getPersonas, getPersonaInfo, loading: wireLoading, error: wireError } = useWire();
+  const { isReady, getContent } = usePersonaContent();
   const { isAuthenticated } = useAuth();
 
   // Redirect to login if not authenticated
@@ -30,50 +24,62 @@ const Index = () => {
     return <Navigate to="/login" />;
   }
 
-  const { data: personas = [], isLoading } = useQuery({
+  const { data: personas = [], isLoading, error: queryError } = useQuery({
     queryKey: ['personas'],
     queryFn: async () => {
-      const rawPersonas = await wireService.getPersonas();
+      if (!isReady) {
+        throw new Error("IPFS not initialized yet");
+      }
+
+      console.log('Fetching personas from blockchain...');
+      const rawPersonas = await getPersonas();
+      console.log('Found personas:', rawPersonas);
+
       if (!rawPersonas.length) {
         return [] as PersonaData[];
       }
 
+      console.log('Fetching persona details...');
       const enrichedPersonas = await Promise.all(
         rawPersonas.map(async (persona) => {
           try {
-            // Get detailed persona info
-            const personaDetails = await wireService.getPersona(persona.persona_name);
-            console.log(personaDetails);
-            if (!personaDetails.initial_state_cid) {
-              console.warn(`No state CID found for persona ${persona.persona_name}`);
+            const personaInfo = await getPersonaInfo(persona.persona_name);
+            
+            if (!personaInfo?.initial_state_cid) {
+              console.warn(`No initial state CID found for persona ${persona.persona_name}`);
               return {
                 name: persona.persona_name,
                 backstory: "Persona state not initialized",
                 traits: [],
                 imageUrl: "/placeholder.svg"
-              } as PersonaData;
+              };
             }
 
-            const stateData = await fetchMessage(personaDetails.initial_state_cid);
+            const stateData = await getContent(personaInfo.initial_state_cid);
+            
             return {
               name: persona.persona_name,
               backstory: stateData.text || "",
               traits: stateData.traits || [],
               imageUrl: "/placeholder.svg"
-            } as PersonaData;
+            };
           } catch (error) {
-            console.error(`Error fetching persona data for ${persona.persona_name}:`, error);
+            console.error(`Error fetching data for ${persona.persona_name}:`, error);
             return {
               name: persona.persona_name,
               backstory: "Failed to load persona data",
               traits: [],
               imageUrl: "/placeholder.svg"
-            } as PersonaData;
+            };
           }
         })
       );
+
+      console.log('Final enriched personas:', enrichedPersonas);
       return enrichedPersonas;
     },
+    enabled: isReady,
+    refetchInterval: 5000,
   });
 
   const filteredPersonas = personas.filter(persona =>
@@ -88,19 +94,45 @@ const Index = () => {
         <AddPersonaDialog />
       </div>
       
-      <div className="relative mb-8">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
-        <Input
-          placeholder="Search by name or trait..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="pl-10"
-        />
-      </div>
+      {queryError && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertDescription>
+            Error loading personas: {queryError instanceof Error ? queryError.message : "Unknown error"}
+          </AlertDescription>
+        </Alert>
+      )}
 
-      {isLoading ? (
-        <div className="text-center">Loading personas...</div>
-      ) : personas.length === 0 ? (
+      {!isReady && (
+        <Alert className="mb-4">
+          <AlertDescription>
+            <div className="flex items-center gap-2">
+              <div className="animate-spin h-4 w-4 border-2 border-primary rounded-full border-t-transparent"></div>
+              Initializing IPFS connection...
+            </div>
+            <div className="text-sm text-muted-foreground mt-2">
+              This may take a few moments. Please wait...
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {isLoading && (
+        <Alert className="mb-4">
+          <AlertDescription>
+            <div className="flex items-center gap-2">
+              <div className="animate-spin h-4 w-4 border-2 border-primary rounded-full border-t-transparent"></div>
+              <div>
+                <div>Loading personas...</div>
+                <div className="text-sm text-muted-foreground">
+                  Fetching data from IPFS network
+                </div>
+              </div>
+            </div>
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {personas.length === 0 ? (
         <div className="text-center text-muted-foreground">
           No personas available. Create one to get started!
         </div>

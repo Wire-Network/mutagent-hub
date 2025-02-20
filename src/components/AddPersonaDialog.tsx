@@ -13,9 +13,10 @@ import { Textarea } from "@/components/ui/textarea"
 import { UserRoundPlus } from "lucide-react"
 import { useState } from "react"
 import { useToast } from "./ui/use-toast"
-import { useIpfs, IpfsMessage } from "@/hooks/useIpfs"
+import { usePersonaContent } from "@/hooks/usePersonaContent"
 import { WireService } from "@/services/wire-service"
 import config from "@/config"
+import { useQueryClient } from '@tanstack/react-query'
 
 export function AddPersonaDialog() {
   const [open, setOpen] = useState(false)
@@ -24,37 +25,69 @@ export function AddPersonaDialog() {
   const [traits, setTraits] = useState("")
   const [isLoading, setIsLoading] = useState(false)
   const { toast } = useToast()
-  const { uploadMessage } = useIpfs()
+  const { isReady, uploadContent } = usePersonaContent()
   const wireService = WireService.getInstance()
+  const queryClient = useQueryClient()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
+    
+    if (!isReady) {
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "IPFS is not initialized yet. Please try again in a moment.",
+      });
+      return;
+    }
 
+    setIsLoading(true);
     try {
-      // Create initial state object
-      const initialState: IpfsMessage = {
+      console.log('Starting persona creation process...');
+      console.log('Step 1: Preparing persona data for IPFS');
+      
+      // Format traits into array
+      const traitArray = traits.split(',').map(t => t.trim()).filter(t => t);
+      
+      // Create initial state message
+      const message = {
         text: backstory,
         timestamp: new Date().toISOString(),
         persona: name,
-        traits: traits.split(',').map(t => t.trim()),
+        traits: traitArray
       };
 
-      // Upload initial state to IPFS
-      const initialStateCid = await uploadMessage(initialState);
+      console.log('Uploading initial state to IPFS:', message);
+      const initialStateCid = await uploadContent(message);
+      console.log('Initial state uploaded to IPFS with CID:', initialStateCid);
 
-      // Add persona to blockchain
-      await wireService.addPersona(name.toLowerCase(), backstory, initialStateCid);
+      console.log('Step 2: Creating persona account and deploying contract');
+      const result = await wireService.addPersona(
+        name.toLowerCase(),
+        backstory,
+        initialStateCid
+      );
+      
+      console.log('Persona creation complete:', {
+        name: name.toLowerCase(),
+        initialStateCid,
+        deployResult: result.deployResult,
+        initResponse: result.initResponse
+      });
 
       toast({
         title: "Success",
-        description: "Persona has been created successfully.",
+        description: "Persona created successfully!",
       });
+
+      // Invalidate and refetch personas query
+      await queryClient.invalidateQueries({ queryKey: ['personas'] });
+      
       setOpen(false);
       setName("");
       setBackstory("");
       setTraits("");
-    } catch (error: any ) {
+    } catch (error: any) {
       console.error('Error creating persona:', error);
       toast({
         variant: "destructive",
@@ -115,7 +148,10 @@ export function AddPersonaDialog() {
             </div>
           </div>
           <DialogFooter>
-            <Button type="submit" disabled={isLoading}>
+            <Button 
+              type="submit" 
+              disabled={isLoading || !isReady}
+            >
               {isLoading ? "Creating..." : "Create Persona"}
             </Button>
           </DialogFooter>

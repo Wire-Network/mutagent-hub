@@ -128,7 +128,8 @@ const Chat = () => {
                 text: messageText,
                 timestamp: new Date().toISOString(),
                 persona: personaName,
-                user: accountName
+                user: accountName,
+                traits: [],
             });
 
             // Create or update conversation history
@@ -137,6 +138,7 @@ const Chat = () => {
                 timestamp: new Date().toISOString(),
                 persona: personaName,
                 user: accountName,
+                traits: [],
                 history: true
             });
 
