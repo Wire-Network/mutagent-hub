@@ -1,5 +1,5 @@
 import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useIpfs, IpfsMessage } from "@/hooks/useIpfs";
 
 interface ChatMessageProps {
@@ -22,19 +22,34 @@ export const ChatMessage = ({
   isPending 
 }: ChatMessageProps) => {
   const [ipfsContent, setIpfsContent] = useState<IpfsMessage | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { fetchMessage } = useIpfs();
+
+  const fetchIpfsContent = useCallback(async () => {
+    if (!ipfsCid || isLoading) return;
+    
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const message = await fetchMessage(ipfsCid);
+      setIpfsContent(message);
+    } catch (error: any) {
+      console.error('Failed to fetch IPFS content:', error);
+      setError(error.message || 'Failed to load message content');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [ipfsCid, fetchMessage, isLoading]);
 
   useEffect(() => {
     if (ipfsCid) {
-      fetchMessage(ipfsCid)
-        .then(message => {
-          setIpfsContent(message);
-        })
-        .catch(error => {
-          console.error('Failed to fetch IPFS content:', error);
-        });
+      // Add a small delay before fetching to prevent too many simultaneous requests
+      const timeoutId = setTimeout(fetchIpfsContent, 500);
+      return () => clearTimeout(timeoutId);
     }
-  }, [ipfsCid, fetchMessage]);
+  }, [ipfsCid, fetchIpfsContent]);
 
   return (
     <div className={cn(
@@ -51,14 +66,26 @@ export const ChatMessage = ({
         <div className="p-4">
           <p className="whitespace-pre-wrap">{content}</p>
           
+          {isLoading && (
+            <div className="mt-2 flex items-center gap-2 text-sm opacity-70">
+              <div className="animate-spin h-3 w-3 border-2 border-current rounded-full border-t-transparent"></div>
+              <span>Loading message content...</span>
+            </div>
+          )}
+
+          {error && (
+            <div className="mt-2 text-sm text-red-500">
+              {error}
+            </div>
+          )}
+          
           {ipfsContent && (
             <div className="mt-3 pt-3 border-t border-border/10">
               <p className="text-sm text-muted-foreground">
-                Original Message: {ipfsContent.text}
               </p>
-              {ipfsContent.traits && (
+              {ipfsContent.data.traits && ipfsContent.data.traits.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1">
-                  {ipfsContent.traits.map((trait, index) => (
+                  {ipfsContent.data.traits.map((trait, index) => (
                     <span 
                       key={index}
                       className="text-xs bg-accent/50 px-2 py-0.5 rounded-full"

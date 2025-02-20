@@ -1,40 +1,34 @@
-import { useHelia } from './useHelia'
-import { unixfs } from '@helia/unixfs'
-import { useState, useEffect } from 'react'
-
-const encoder = new TextEncoder()
-const decoder = new TextDecoder()
+import { useState } from 'react'
+import { PinataService } from '@/services/pinata-service'
 
 export function usePersonaContent() {
-  const helia = useHelia()
-  const [fs, setFs] = useState<any>(null)
-
-  useEffect(() => {
-    if (!helia) return
-
-    setFs(unixfs(helia))
-  }, [helia])
+  const [isReady] = useState(true) // Always ready since we're just using Pinata
+  const pinataService = PinataService.getInstance()
 
   const uploadContent = async (content: any) => {
-    if (!fs) throw new Error('UnixFS not initialized')
-
-    const bytes = encoder.encode(JSON.stringify(content))
-    const cid = await fs.addBytes(bytes)
-    return cid.toString()
+    try {
+      const cid = await pinataService.uploadJSON(content)
+      console.log('Content uploaded to Pinata:', cid)
+      return cid
+    } catch (error) {
+      console.error('Error uploading content:', error)
+      throw error
+    }
   }
 
   const getContent = async (cid: string) => {
-    if (!fs) throw new Error('UnixFS not initialized')
-
-    let data = ''
-    for await (const chunk of fs.cat(cid)) {
-      data += decoder.decode(chunk, { stream: true })
+    try {
+      const content = await pinataService.getContent(cid)
+      console.log('Content retrieved from Pinata:', content)
+      return content
+    } catch (error) {
+      console.error('Error fetching content:', error)
+      throw error
     }
-    return JSON.parse(data)
   }
 
   return {
-    isReady: !!fs,
+    isReady,
     uploadContent,
     getContent
   }
