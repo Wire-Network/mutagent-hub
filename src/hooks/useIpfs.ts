@@ -8,21 +8,18 @@ export interface IpfsMessage {
         persona: string;
         traits: string[];
         user?: string;
-        history?: boolean;
     };
     contentType: string;
 }
+
 export function useIpfs() {
     const [error, setError] = useState<Error | null>(null);
     const pinataService = PinataService.getInstance();
 
     const uploadMessage = async (message: IpfsMessage): Promise<string> => {
         try {
-            const isConversationHistory = message.data.history === true;
-            const contentType = isConversationHistory ? 'Conversation History' : 'Message';
-            
             const cid = await pinataService.uploadJSON(message);
-            console.log(`${contentType} uploaded to IPFS via Pinata, CID:`, cid);
+            console.log('Message uploaded to IPFS via Pinata, CID:', cid);
             return cid;
         } catch (err) {
             console.error('Error uploading to IPFS:', err);
@@ -33,9 +30,32 @@ export function useIpfs() {
 
     const fetchMessage = async (cid: string): Promise<IpfsMessage> => {
         try {
-            const message = await pinataService.getContent(cid);
-            const contentType = message.data.history === true ? 'Conversation History' : 'Message';
-            console.log(`${contentType} retrieved from IPFS via Pinata:`, message);
+            const response = await pinataService.getContent(cid);
+            console.log('Raw IPFS response:', response);
+            
+            // Handle nested data structure
+            let messageData = response;
+            if (response.data && response.data.data) {
+                messageData = response.data;
+            }
+            
+            // Ensure the data has the required fields
+            if (!messageData.data || !messageData.data.text) {
+                throw new Error('Invalid message format');
+            }
+
+            const message: IpfsMessage = {
+                data: {
+                    text: messageData.data.text,
+                    timestamp: messageData.data.timestamp || new Date().toISOString(),
+                    persona: messageData.data.persona || '',
+                    traits: messageData.data.traits || [],
+                    user: messageData.data.user
+                },
+                contentType: messageData.contentType || 'application/json'
+            };
+
+            console.log('Processed IPFS message:', message);
             return message;
         } catch (err) {
             console.error('Error fetching from IPFS:', err);
@@ -45,7 +65,7 @@ export function useIpfs() {
     };
 
     return {
-        isInitialized: true, // Always true since we're using Pinata
+        isInitialized: true,
         error,
         uploadMessage,
         fetchMessage,

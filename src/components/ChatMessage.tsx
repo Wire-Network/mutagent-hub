@@ -21,36 +21,6 @@ export const ChatMessage = ({
   aiReply,
   isPending 
 }: ChatMessageProps) => {
-  const [ipfsContent, setIpfsContent] = useState<IpfsMessage | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const { fetchMessage } = useIpfs();
-
-  const fetchIpfsContent = useCallback(async () => {
-    if (!ipfsCid || isLoading) return;
-    
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const message = await fetchMessage(ipfsCid);
-      setIpfsContent(message);
-    } catch (error: any) {
-      console.error('Failed to fetch IPFS content:', error);
-      setError(error.message || 'Failed to load message content');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [ipfsCid, fetchMessage, isLoading]);
-
-  useEffect(() => {
-    if (ipfsCid) {
-      // Add a small delay before fetching to prevent too many simultaneous requests
-      const timeoutId = setTimeout(fetchIpfsContent, 500);
-      return () => clearTimeout(timeoutId);
-    }
-  }, [ipfsCid, fetchIpfsContent]);
-
   return (
     <div className="space-y-4">
       {/* User Message */}
@@ -67,32 +37,6 @@ export const ChatMessage = ({
           </div>
           <div className="p-4">
             <p className="whitespace-pre-wrap">{content}</p>
-            
-            {isLoading && (
-              <div className="mt-2 flex items-center gap-2 text-sm opacity-70">
-                <div className="animate-spin h-3 w-3 border-2 border-current rounded-full border-t-transparent"></div>
-                <span>Loading message content...</span>
-              </div>
-            )}
-
-            {error && (
-              <div className="mt-2 text-sm text-red-500">
-                {error}
-              </div>
-            )}
-            
-            {ipfsContent && ipfsContent.data.traits && ipfsContent.data.traits.length > 0 && (
-              <div className="mt-2 flex flex-wrap gap-1">
-                {ipfsContent.data.traits.map((trait, index) => (
-                  <span 
-                    key={index}
-                    className="text-xs bg-accent/50 px-2 py-0.5 rounded-full"
-                  >
-                    {trait}
-                  </span>
-                ))}
-              </div>
-            )}
           </div>
         </div>
         
