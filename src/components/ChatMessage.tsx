@@ -52,90 +52,103 @@ export const ChatMessage = ({
   }, [ipfsCid, fetchIpfsContent]);
 
   return (
-    <div className={cn(
-      "flex flex-col",
-      isUser ? "items-end" : "items-start"
-    )}>
+    <div className="space-y-4">
+      {/* User Message */}
       <div className={cn(
-        "max-w-[80%] rounded-lg shadow-sm",
-        isUser ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+        "flex flex-col",
+        isUser ? "items-end" : "items-start"
       )}>
-        <div className="px-4 py-2 text-sm font-medium border-b border-border/10">
-          {isUser ? "You" : "Assistant"}
-        </div>
-        <div className="p-4">
-          <p className="whitespace-pre-wrap">{content}</p>
-          
-          {isLoading && (
-            <div className="mt-2 flex items-center gap-2 text-sm opacity-70">
-              <div className="animate-spin h-3 w-3 border-2 border-current rounded-full border-t-transparent"></div>
-              <span>Loading message content...</span>
-            </div>
-          )}
+        <div className={cn(
+          "max-w-[80%] rounded-lg shadow-sm",
+          isUser ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"
+        )}>
+          <div className="px-4 py-2 text-sm font-medium border-b border-border/10">
+            {isUser ? "You" : "Assistant"}
+          </div>
+          <div className="p-4">
+            <p className="whitespace-pre-wrap">{content}</p>
+            
+            {isLoading && (
+              <div className="mt-2 flex items-center gap-2 text-sm opacity-70">
+                <div className="animate-spin h-3 w-3 border-2 border-current rounded-full border-t-transparent"></div>
+                <span>Loading message content...</span>
+              </div>
+            )}
 
-          {error && (
-            <div className="mt-2 text-sm text-red-500">
-              {error}
-            </div>
+            {error && (
+              <div className="mt-2 text-sm text-red-500">
+                {error}
+              </div>
+            )}
+            
+            {ipfsContent && ipfsContent.data.traits && ipfsContent.data.traits.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1">
+                {ipfsContent.data.traits.map((trait, index) => (
+                  <span 
+                    key={index}
+                    className="text-xs bg-accent/50 px-2 py-0.5 rounded-full"
+                  >
+                    {trait}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+        
+        <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1 px-2">
+          <span>{timestamp}</span>
+          {txHash && (
+            <a
+              href={`https://etherscan.io/tx/${txHash}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-primary transition-colors"
+            >
+              View transaction
+            </a>
           )}
-          
-          {ipfsContent && (
-            <div className="mt-3 pt-3 border-t border-border/10">
-              <p className="text-sm text-muted-foreground">
-              </p>
-              {ipfsContent.data.traits && ipfsContent.data.traits.length > 0 && (
-                <div className="mt-2 flex flex-wrap gap-1">
-                  {ipfsContent.data.traits.map((trait, index) => (
-                    <span 
-                      key={index}
-                      className="text-xs bg-accent/50 px-2 py-0.5 rounded-full"
-                    >
-                      {trait}
-                    </span>
-                  ))}
-                </div>
-              )}
-            </div>
+          {ipfsCid && (
+            <a
+              href={`https://ipfs.io/ipfs/${ipfsCid}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hover:text-primary transition-colors"
+            >
+              View on IPFS
+            </a>
           )}
-          
-          {aiReply && (
-            <div className="mt-3 pt-3 border-t border-border/10">
-              <p className="whitespace-pre-wrap text-sm">{aiReply}</p>
+        </div>
+      </div>
+
+      {/* AI Response */}
+      {aiReply && (
+        <div className="flex flex-col items-start">
+          <div className="max-w-[80%] rounded-lg shadow-sm bg-muted text-muted-foreground">
+            <div className="px-4 py-2 text-sm font-medium border-b border-border/10">
+              Batman
             </div>
-          )}
-          
-          {isPending && (
-            <div className="mt-2 flex items-center gap-2 text-sm opacity-70">
+            <div className="p-4">
+              <p className="whitespace-pre-wrap">{aiReply}</p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1 px-2">
+            <span>{new Date().toLocaleString()}</span>
+          </div>
+        </div>
+      )}
+
+      {/* Pending Indicator */}
+      {isPending && !aiReply && (
+        <div className="flex flex-col items-start">
+          <div className="max-w-[80%] rounded-lg shadow-sm bg-muted/50 text-muted-foreground p-4">
+            <div className="flex items-center gap-2 text-sm">
               <div className="animate-spin h-3 w-3 border-2 border-current rounded-full border-t-transparent"></div>
               <span>Waiting for response...</span>
             </div>
-          )}
+          </div>
         </div>
-      </div>
-      
-      <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1 px-2">
-        <span>{timestamp}</span>
-        {txHash && (
-          <a
-            href={`https://etherscan.io/tx/${txHash}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-primary transition-colors"
-          >
-            View transaction
-          </a>
-        )}
-        {ipfsCid && (
-          <a
-            href={`https://ipfs.io/ipfs/${ipfsCid}`}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="hover:text-primary transition-colors"
-          >
-            View on IPFS
-          </a>
-        )}
-      </div>
+      )}
     </div>
   );
 };
