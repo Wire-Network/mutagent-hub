@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
@@ -18,6 +18,7 @@ const Index = () => {
   const { getPersonas, getPersonaInfo, loading: wireLoading, error: wireError } = useWire();
   const { isReady, getContent } = usePersonaContent();
   const { isAuthenticated } = useAuth();
+  const hasLoadedPersonas = useRef(false);
 
   // Redirect to login if not authenticated
   if (!isAuthenticated) {
@@ -76,11 +77,13 @@ const Index = () => {
         })
       );
 
-      console.log('Final enriched personas:', enrichedPersonas);
       return enrichedPersonas;
     },
     enabled: isReady,
-    refetchInterval: 5000,
+    staleTime: 1000 * 30, // Data remains fresh for 30 seconds
+    gcTime: 1000 * 60 * 5, // Keep unused data in cache for 5 minutes
+    refetchOnWindowFocus: false,
+    refetchInterval: undefined
   });
 
   const filteredPersonas = personas.filter(persona =>

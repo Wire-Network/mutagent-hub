@@ -32,6 +32,17 @@ export interface GetRowsOptions {
 }
 
 export class WireService {
+    getLatestHistoryCid(personaName: string, accountName: string): Promise<{ full_convo_history_cid: string } | null> {
+        return this.getRows({
+            contract: personaName,
+            scope: personaName,
+            table: "convos",
+            lower_bound: accountName,
+            upper_bound: accountName,
+            key_type: "name",
+            limit: 1
+        }).then(result => result.rows[0] || null);
+    }
     private static instance: WireService;
     private knownAbis = new Map<NameType, ABI>();
 
@@ -241,7 +252,7 @@ export class WireService {
                 account_name: userAccount,
                 pre_state_cid: preStateCid,
                 msg_cid: messageCid,
-                full_convo_history_cid: fullConvoHistoryCid,
+                full_convo_history_cid: messageCid,
             },
         };
 
@@ -287,47 +298,24 @@ export class WireService {
     }
 
     async getMessages(personaName: string, userAccount?: string): Promise<{
-        conversation?: { account_name: string; full_convo_history_cid: string };
         messages: any[];
     }> {
         const result: {
-            conversation?: { account_name: string; full_convo_history_cid: string };
             messages: any[];
         } = {
             messages: []
         };
 
-        // If userAccount is provided, get their specific messages
+        // Get messages for the specific user
         if (userAccount) {
             const messagesResult = await this.getRows({
                 contract: personaName,
                 scope: userAccount,
-                table: "messages"
+                table: "messages",
+                limit: 100,  // Reasonable limit for pagination
+                reverse: true  // Get newest messages first
             });
             result.messages = messagesResult.rows;
-
-            // Get the conversation history for this user
-            const convosResult = await this.getRows({
-                contract: personaName,
-                scope: personaName,
-                table: "convos",
-                lower_bound: userAccount,
-                upper_bound: userAccount,
-                key_type: "name",
-                limit: 1
-            });
-            
-            if (convosResult.rows.length > 0) {
-                result.conversation = convosResult.rows[0];
-            }
-        } else {
-            // If no userAccount provided, get all conversations
-            const convosResult = await this.getRows({
-                contract: personaName,
-                scope: personaName,
-                table: "convos"
-            });
-            result.conversation = convosResult.rows[0];
         }
 
         return result;

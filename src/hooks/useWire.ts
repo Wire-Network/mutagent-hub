@@ -39,45 +39,33 @@ export function useWire() {
     }, [toast]);
 
     const getPersonas = useCallback(async (): Promise<RawPersona[]> => {
-        setLoading(true);
-        setError(null);
         try {
             const personas = await wireService.getPersonas();
             return personas;
         } catch (e) {
             handleError(e);
             return [];
-        } finally {
-            setLoading(false);
         }
-    }, [handleError, wireService]);
-
-    const getPersonaInfo = useCallback(async (personaName: string): Promise<PersonaInfo | null> => {
-        setLoading(true);
-        setError(null);
-        try {
-            return await wireService.getPersona(personaName);
-        } catch (e) {
-            handleError(e);
-            return null;
-        } finally {
-            setLoading(false);
-        }
-    }, [handleError, wireService]);
+    }, [handleError]);
 
     const getMessages = useCallback(async (personaName: string, userAccount?: string) => {
-        setLoading(true);
-        setError(null);
         try {
             const response = await wireService.getMessages(personaName, userAccount);
             return response;
         } catch (e) {
             handleError(e);
             return { messages: [] };
-        } finally {
-            setLoading(false);
         }
-    }, [handleError, wireService]);
+    }, [handleError]);
+
+    const getPersonaInfo = useCallback(async (personaName: string): Promise<PersonaInfo | null> => {
+        try {
+            return await wireService.getPersona(personaName);
+        } catch (e) {
+            handleError(e);
+            return null;
+        }
+    }, [handleError]);
 
     const submitMessage = useCallback(async (
         personaName: string,
@@ -87,27 +75,29 @@ export function useWire() {
         fullConvoHistoryCid: string 
     ) => {
         setLoading(true);
-        setError(null);
         try {
-            const result = await wireService.submitMessage(personaName, userAccount, preStateCid, messageCid, fullConvoHistoryCid);
-            toast({
-                title: "Message Submitted",
-                description: "Your message has been submitted to the blockchain.",
-            });
+            const result = await wireService.submitMessage(
+                personaName,
+                userAccount,
+                preStateCid,
+                messageCid,
+                fullConvoHistoryCid
+            );
             return result;
         } catch (e) {
             handleError(e);
+            throw e;
         } finally {
             setLoading(false);
         }
-    }, [handleError, toast, wireService]);
+    }, [handleError]);
 
     return {
         loading,
         error,
         getPersonas,
-        getPersonaInfo,
         getMessages,
+        getPersonaInfo,
         submitMessage
     };
 } 

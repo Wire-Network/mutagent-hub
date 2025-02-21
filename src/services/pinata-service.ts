@@ -63,4 +63,4 @@ export class PinataService {
             return false;
         }
     }
-} 
+}
