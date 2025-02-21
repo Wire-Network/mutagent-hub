@@ -18,6 +18,7 @@ const config = {
   },
   pinata: {
     jwt: import.meta.env.VITE_PINATA_JWT,
+    gateway: import.meta.env.VITE_PINATA_GATEWAY,
     }
 } as const;
 

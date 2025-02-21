@@ -1,18 +1,15 @@
 import { PinataSDK } from 'pinata-web3';
+import config from '@/config';
 
 export class PinataService {
     private static instance: PinataService;
     private pinata: PinataSDK;
 
-    private constructor() {
-        const jwt = import.meta.env.VITE_PINATA_JWT;
-        const gateway = import.meta.env.VITE_PINATA_GATEWAY;
-        
+    constructor() {
+        const jwt = config.pinata.jwt;
+        const gateway = config.pinata.gateway;
         if (!jwt) {
             throw new Error('Pinata JWT not found in environment variables');
-        }
-        if (!gateway) {
-            throw new Error('Pinata Gateway not found in environment variables');
         }
 
         this.pinata = new PinataSDK({

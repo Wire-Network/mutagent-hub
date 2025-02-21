@@ -18,6 +18,7 @@ export interface Message {
     finalized: boolean;
     user: string;
     created_at: string;
+    response?: string;
 }
 
 export function useWire() {
@@ -64,15 +65,15 @@ export function useWire() {
         }
     }, [handleError, wireService]);
 
-    const getMessages = useCallback(async (personaName?: string) => {
+    const getMessages = useCallback(async (personaName: string, userAccount?: string) => {
         setLoading(true);
         setError(null);
         try {
-            const response = await wireService.getMessages(personaName);
-            return response.messages as Message[];
+            const response = await wireService.getMessages(personaName, userAccount);
+            return response;
         } catch (e) {
             handleError(e);
-            return [];
+            return { messages: [] };
         } finally {
             setLoading(false);
         }

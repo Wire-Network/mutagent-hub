@@ -18,7 +18,15 @@ interface ExtendedMessage extends Message {
 }
 
 // Polling interval in milliseconds
-const POLLING_INTERVAL = 30000; // Increased to 30 seconds
+const POLLING_INTERVAL = 3000; // Poll every 3 seconds to catch finalized messages quickly
+
+interface ChainMessage {
+    key: number;
+    pre_state_cid: string;
+    msg_cid: string;
+    post_state_cid: string;
+    response: string;
+}
 
 const Chat = () => {
     const { personaName } = useParams<{ personaName: string }>();
@@ -48,7 +56,7 @@ const Chat = () => {
     }, []);
 
     const loadMessages = useCallback(async () => {
-        if (!personaName || isLoadingMessages) return;
+        if (!personaName || !accountName || isLoadingMessages) return;
 
         // Cancel any ongoing fetches
         if (abortControllerRef.current) {
@@ -58,64 +66,118 @@ const Chat = () => {
 
         setIsLoadingMessages(true);
         try {
-            const fetchedMessages = await getMessages(personaName);
+            console.log('Fetching messages for:', { personaName, accountName });
+            const response = await getMessages(personaName, accountName);
+            console.log('Raw response from chain:', response);
+            
+            // Ensure we have an array of messages
+            const fetchedMessages = Array.isArray(response.messages) ? response.messages : [];
+            console.log('Fetched messages from chain:', fetchedMessages);
+            
+            if (fetchedMessages.length === 0) {
+                setMessages([]);
+                return;
+            }
+            
+            // Get the latest message for polling optimization
+            const latestMessage = fetchedMessages[fetchedMessages.length - 1];
+            const latestLocalMessage = messages[messages.length - 1];
+            
+            // If we have messages and the latest message hasn't changed, only check the latest
+            if (messages.length > 0 && latestMessage && latestLocalMessage && 
+                latestMessage.msg_cid === latestLocalMessage.message_cid) {
+                
+                // If the latest message has a new response, process just that one
+                if (latestMessage.response && (!latestLocalMessage.aiReply || latestLocalMessage.aiReply !== latestMessage.response)) {
+                    console.log('Processing updated response for latest message:', latestMessage);
+                    const updatedMessage: ExtendedMessage = {
+                        ...latestLocalMessage,
+                        aiReply: latestMessage.response,
+                        finalized: true,
+                        post_persona_state_cid: latestMessage.post_state_cid
+                    };
+                    
+                    // Update the message in local cache and state
+                    localMessagesRef.current[latestMessage.msg_cid] = updatedMessage;
+                    setMessages(prev => prev.map(msg => 
+                        msg.message_cid === latestMessage.msg_cid ? updatedMessage : msg
+                    ));
+                }
+                
+                // Schedule next poll
+                if (pollingTimeoutRef.current) {
+                    clearTimeout(pollingTimeoutRef.current);
+                }
+                pollingTimeoutRef.current = setTimeout(loadMessages, POLLING_INTERVAL);
+                setIsLoadingMessages(false);
+                return;
+            }
             
             // Process messages one at a time sequentially
-            const processMessages = async (messages: Message[]) => {
+            const processMessages = async (chainMessages: ChainMessage[]) => {
                 const results = [];
                 
-                for (const message of messages) {
+                for (const message of chainMessages) {
                     // Check if aborted
                     if (abortControllerRef.current?.signal.aborted) {
                         throw new Error('Message loading aborted');
                     }
 
-                    // Skip if message is already in localMessagesRef
-                    if (localMessagesRef.current[message.message_cid]) {
-                        results.push(localMessagesRef.current[message.message_cid]);
+                    // Skip if message is already in localMessagesRef and hasn't been finalized
+                    if (localMessagesRef.current[message.msg_cid] && 
+                        (!message.response || localMessagesRef.current[message.msg_cid].aiReply === message.response)) {
+                        results.push(localMessagesRef.current[message.msg_cid]);
                         continue;
                     }
 
-                    // Skip if message is pending finalization
-                    if (!message.finalized && !message.completion_cid) {
-                        results.push({
-                            ...message,
-                            messageText: null,
-                            aiReply: null
-                        });
-                        continue;
-                    }
-
-                    const extendedMessage: ExtendedMessage = { 
-                        ...message, 
-                        aiReply: null, 
-                        messageText: null 
-                    };
-                    
                     try {
-                        // Fetch original message text if not already in local ref
-                        const messageData = await fetchMessage(message.message_cid);
-                        extendedMessage.messageText = messageData.data.text;
+                        // Always fetch the message content first
+                        console.log('Fetching message content for CID:', message.msg_cid);
+                        const messageData = await fetchMessage(message.msg_cid);
+                        console.log('Fetched message data:', messageData);
 
-                        // Only fetch AI reply if message is finalized and has completion CID
-                        if (message.finalized && message.completion_cid) {
-                            const replyData = await fetchMessage(message.completion_cid);
-                            extendedMessage.aiReply = replyData.data.text;
-                        }
+                        const extendedMessage: ExtendedMessage = { 
+                            message_id: message.key,
+                            persona_name: personaName || '',
+                            message_cid: message.msg_cid,
+                            pre_persona_state_cid: message.pre_state_cid,
+                            completion_cid: '',
+                            post_persona_state_cid: message.post_state_cid,
+                            finalized: !!message.response,
+                            user: accountName || '',
+                            created_at: messageData.data.timestamp || new Date().toISOString(),
+                            aiReply: message.response || null,
+                            messageText: messageData.data.text // Set the message text directly from IPFS data
+                        };
+                        
+                        results.push(extendedMessage);
                     } catch (error) {
                         if (error.name === 'AbortError') {
                             throw error;
                         }
-                        console.error('Error fetching message content:', error);
-                        // Continue with partial data
+                        console.error('Error processing message:', error);
+                        // If we can't fetch the content, create a message with just the CID
+                        const fallbackMessage: ExtendedMessage = {
+                            message_id: message.key,
+                            persona_name: personaName || '',
+                            message_cid: message.msg_cid,
+                            pre_persona_state_cid: message.pre_state_cid,
+                            completion_cid: '',
+                            post_persona_state_cid: message.post_state_cid,
+                            finalized: !!message.response,
+                            user: accountName || '',
+                            created_at: new Date().toISOString(),
+                            aiReply: message.response || null,
+                            messageText: 'Error loading message content...'
+                        };
+                        results.push(fallbackMessage);
                     }
-                    
-                    results.push(extendedMessage);
                 }
                 return results;
             };
 
             const updatedMessages = await processMessages(fetchedMessages);
+            console.log('Processed messages:', updatedMessages);
             
             // Check if aborted before updating state
             if (!abortControllerRef.current?.signal.aborted) {
@@ -126,16 +188,8 @@ const Chat = () => {
                     }
                 });
 
-                // Merge with any pending local messages that aren't yet in the blockchain
-                const allMessages = [...updatedMessages];
-                Object.values(localMessagesRef.current).forEach(localMsg => {
-                    if (!updatedMessages.find(m => m.message_cid === localMsg.message_cid)) {
-                        allMessages.push(localMsg);
-                    }
-                });
-
                 // Sort messages by timestamp
-                allMessages.sort((a, b) => 
+                const allMessages = [...updatedMessages].sort((a, b) => 
                     new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
                 );
 
@@ -164,7 +218,7 @@ const Chat = () => {
         } finally {
             setIsLoadingMessages(false);
         }
-    }, [personaName, getMessages, fetchMessage, isLoadingMessages, toast]);
+    }, [personaName, accountName, getMessages, fetchMessage, isLoadingMessages, toast, messages]);
 
     useEffect(() => {
         if (personaName && accountName) {
