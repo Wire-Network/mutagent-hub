@@ -111,14 +111,27 @@ export class MetaMaskService {
             
             // Check if account exists
             try {
-                await this.wireService.getAccount(wireName);
-                console.log('Account exists:', wireName);
-                return wireName;
-            } catch (err) {
+                const result = await this.wireService.getRows({
+                    contract: 'sysio',
+                    scope: 'sysio',
+                    table: 'userres',
+                    lower_bound: wireName,
+                    upper_bound: wireName,
+                    limit: 1
+                });
+                
+                if (result.rows.length > 0) {
+                    console.log('Account exists:', wireName);
+                    return wireName;
+                }
+                
                 // Account doesn't exist, create it
                 console.log('Account does not exist, creating:', wireName);
                 await this.createNewAccount(wireName, address);
                 return wireName;
+            } catch (err) {
+                console.error('Error checking account:', err);
+                throw err;
             }
         } catch (error) {
             console.error('Error in checkAndCreateAccount:', error);
@@ -131,19 +144,19 @@ export class MetaMaskService {
             // Get public key from MetaMask
             const message = "Retrieve Public Key";
             const signature = await this.signMessage(message);
-            const publicKey = ethers.recoverPublicKey(
-                ethers.hashMessage(message),
-                signature
-            );
+            
+            // Recover public key using ethers utils
+            const msgHash = ethers.hashMessage(message);
+            const publicKey = ethers.SigningKey.recoverPublicKey(msgHash, signature);
             
             // Format public key for WIRE
             const formattedPubKey = `PUB_EM_${publicKey.slice(2)}`;
 
-            // Register account on WIRE
+            // Register account on WIRE with sysio authority
             await this.wireService.pushTransaction({
-                account: this.wireService.namespace,
+                account: 'sysio',
                 name: 'newaccount',
-                authorization: [{ actor: this.wireService.namespace, permission: 'active' }],
+                authorization: [{ actor: 'sysio', permission: 'active' }],
                 data: {
                     account_name: wireName,
                     public_key: formattedPubKey,
