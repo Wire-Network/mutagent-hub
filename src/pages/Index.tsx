@@ -152,7 +152,7 @@ const Index = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
-        <h1 className="text-4xl font-bold">Choose Your Chat Companion</h1>
+        <h1 className="text-4xl font-bold text-gradient">Choose Your Chat Companion</h1>
         <AddPersonaDialog onPersonaAdded={refreshPersonas} />
       </div>
       
@@ -165,7 +165,7 @@ const Index = () => {
       )}
 
       {!isReady && (
-        <Alert className="mb-4">
+        <Alert className="mb-4 border-primary/20">
           <AlertDescription>
             <div className="flex items-center gap-2">
               <div className="animate-spin h-4 w-4 border-2 border-primary rounded-full border-t-transparent"></div>
@@ -179,7 +179,7 @@ const Index = () => {
       )}
 
       {(isLoading || isGenerating) && (
-        <Alert className="mb-4">
+        <Alert className="mb-4 border-primary/20">
           <AlertDescription>
             <div className="flex items-center gap-2">
               <div className="animate-spin h-4 w-4 border-2 border-primary rounded-full border-t-transparent"></div>
@@ -203,14 +203,14 @@ const Index = () => {
           {filteredPersonas.map((persona) => (
             <div
               key={persona.name}
-              className="persona-card bg-card rounded-lg p-6 shadow-lg transition-all duration-300"
+              className="persona-card glass-panel rounded-lg p-6 shadow-lg transition-all duration-300 border border-primary/20 hover:border-primary/40"
             >
               <img
                 src={persona.imageUrl}
                 alt={persona.name}
-                className="w-32 h-32 mx-auto mb-4 rounded-full object-cover"
+                className="w-32 h-32 mx-auto mb-4 rounded-full object-cover border-2 border-primary/30"
               />
-              <h2 className="text-2xl font-bold mb-2 capitalize">{persona.name}</h2>
+              <h2 className="text-2xl font-bold mb-2 capitalize text-primary">{persona.name}</h2>
               <p className="text-muted-foreground mb-4 line-clamp-3">
                 {persona.backstory}
               </p>
@@ -219,7 +219,7 @@ const Index = () => {
                   {persona.traits.map((trait, index) => (
                     <span
                       key={`${trait}-${index}`}
-                      className="bg-accent/50 px-2 py-1 rounded-full text-xs"
+                      className="bg-primary/10 text-primary border border-primary/20 px-2 py-1 rounded-full text-xs"
                     >
                       {trait}
                     </span>
@@ -227,7 +227,7 @@ const Index = () => {
                 </div>
               )}
               <Button
-                className="w-full"
+                className="w-full cyber-button"
                 onClick={() => navigate(`/chat/${persona.name.toLowerCase()}`)}
               >
                 Chat Now
