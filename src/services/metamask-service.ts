@@ -21,13 +21,22 @@ export class MetaMaskService {
         return MetaMaskService.instance;
     }
 
-    async connectWallet(): Promise<string> {
+    async connectWallet(requestNewAccount: boolean = false): Promise<string> {
         if (!window.ethereum) {
             throw new Error('MetaMask is not installed');
         }
 
         try {
             this.provider = new ethers.BrowserProvider(window.ethereum);
+            
+            // If requesting a new account, prompt MetaMask to show account selection
+            if (requestNewAccount) {
+                await window.ethereum.request({
+                    method: 'wallet_requestPermissions',
+                    params: [{ eth_accounts: {} }]
+                });
+            }
+            
             const accounts = await this.provider.send('eth_requestAccounts', []);
             return accounts[0];
         } catch (error) {
