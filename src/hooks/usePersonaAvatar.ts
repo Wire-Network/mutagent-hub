@@ -35,11 +35,12 @@ export function usePersonaAvatar() {
 
         try {
             // Try to fetch existing avatar from IPFS first
-            const ipfsKey = `avatar-${personaName}`;
+            const avatarName = `avatar-${personaName}`;
             try {
-                const existingAvatar = await pinataService.getContent(ipfsKey);
+                console.log('Attempting to fetch existing avatar:', avatarName);
+                const existingAvatar = await pinataService.getContent(avatarName);
                 if (existingAvatar?.imageData) {
-                    console.log('Found existing avatar in IPFS:', ipfsKey);
+                    console.log('Found existing avatar in IPFS:', avatarName);
                     AVATAR_CACHE.set(personaName, existingAvatar.imageData);
                     return existingAvatar.imageData;
                 }
@@ -79,7 +80,7 @@ export function usePersonaAvatar() {
             const data = await response.json();
             const imageBase64 = data.images[0];
 
-            // Store in IPFS
+            // Store in IPFS with metadata
             const avatarData = {
                 imageData: imageBase64,
                 metadata: {
@@ -89,9 +90,9 @@ export function usePersonaAvatar() {
                 } as AvatarMetadata
             };
 
-            // Upload to IPFS with the predictable key
-            await pinataService.uploadJSON(avatarData, ipfsKey);
-            console.log('Stored new avatar in IPFS:', ipfsKey);
+            // Upload to IPFS with the avatar name
+            await pinataService.uploadJSON(avatarData, avatarName);
+            console.log('Stored new avatar in IPFS:', avatarName);
 
             // Cache in memory
             AVATAR_CACHE.set(personaName, imageBase64);
