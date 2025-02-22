@@ -11,7 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PersonaData, PersonaState } from '@/types/persona';
 import { useWire } from '@/hooks/useWire';
 import { usePersonaAvatar } from '@/hooks/usePersonaAvatar';
-import { Search, Menu } from "lucide-react";
+import { Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
@@ -164,9 +164,13 @@ const Index = () => {
             variant="ghost"
             size="icon"
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="w-8 h-8 mb-8"
+            className="w-8 h-8 mb-8 p-0 hover:bg-primary/10"
           >
-            <Menu className="h-4 w-4" />
+            <img
+              src="/favicon.ico"
+              alt="Toggle Sidebar"
+              className="w-6 h-6"
+            />
           </Button>
           {isSidebarOpen && (
             <div className="space-y-4 flex-1 flex flex-col">
