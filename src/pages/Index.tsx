@@ -26,6 +26,7 @@ const Index = () => {
   const [personaAvatars, setPersonaAvatars] = useState<Map<string, string>>(new Map());
   const queryClient = useQueryClient();
   const pinataService = PinataService.getInstance();
+  const [open, setOpen] = useState(false);
 
   const { data: personas = [], isLoading, error: queryError } = useQuery({
     queryKey: ['personas'],
@@ -183,14 +184,23 @@ const Index = () => {
                 </div>
                 
                 <div className="mt-auto">
-                  <AddPersonaDialog onPersonaAdded={refreshPersonas} />
+                  <Button 
+                    variant="outline" 
+                    className="w-full cyber-button"
+                    onClick={() => {
+                      setOpen(!open)
+                    }}
+                  >
+                    <UserRoundPlus className="h-4 w-4" />
+                    Add New Persona
+                  </Button>
                 </div>
               </div>
 
               <div className="mt-4 pt-4 border-t border-primary/20">
                 <Button 
                   variant="outline" 
-                  className="w-full"
+                  className="w-full cyber-button"
                   onClick={() => {
                     logout();
                     navigate('/login');
