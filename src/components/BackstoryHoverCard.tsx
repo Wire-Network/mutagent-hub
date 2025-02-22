@@ -18,15 +18,15 @@ export const BackstoryHoverCard = ({ children, backstory }: BackstoryHoverCardPr
         {children}
       </HoverCardTrigger>
       <HoverCardContent 
-        className="w-80 bg-secondary border-2 border-primary shadow-[0_0_30px_-5px] shadow-primary/30 
-        p-4 rounded-lg"
+        className="absolute inset-0 w-full h-full m-0 p-0 bg-secondary/80 backdrop-blur-sm 
+        border-2 border-primary/50 rounded-lg transition-all duration-300"
         align="center"
-        sideOffset={10}
+        sideOffset={0}
       >
-        <ScrollArea className="h-[200px] w-full pr-4">
-          <div className="space-y-4">
-            <div className="border-l-2 border-primary pl-4">
-              <p className="text-sm leading-relaxed text-white">
+        <ScrollArea className="h-full w-full px-6 py-4">
+          <div className="h-full flex items-center">
+            <div className="border-l-2 border-primary/70 pl-4">
+              <p className="text-base leading-relaxed text-white/90">
                 {backstory}
               </p>
             </div>
