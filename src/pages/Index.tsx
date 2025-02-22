@@ -153,7 +153,16 @@ const Index = () => {
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-12">
-        <h1 className="text-4xl font-bold text-gradient font-heading">Choose Your Chat Companion</h1>
+        <div className="flex items-center gap-4">
+          <h1 className="text-4xl font-bold text-gradient font-heading">Choose Your Chat Companion</h1>
+          <Button
+            variant="outline"
+            onClick={() => navigate("/about")}
+            className="hidden md:inline-flex"
+          >
+            About Project
+          </Button>
+        </div>
         <AddPersonaDialog onPersonaAdded={refreshPersonas} />
       </div>
       
