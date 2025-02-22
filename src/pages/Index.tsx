@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -10,7 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PersonaData, PersonaState } from '@/types/persona';
 import { useWire } from '@/hooks/useWire';
 import { usePersonaAvatar } from '@/hooks/usePersonaAvatar';
-import { Search, Menu } from "lucide-react";
+import { Search, Menu, UserPlus } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { PinataService } from "@/services/pinata-service";
@@ -191,7 +192,7 @@ const Index = () => {
                       setOpen(!open)
                     }}
                   >
-                    <UserRoundPlus className="h-4 w-4" />
+                    <UserPlus className="h-4 w-4" />
                     Add New Persona
                   </Button>
                 </div>
