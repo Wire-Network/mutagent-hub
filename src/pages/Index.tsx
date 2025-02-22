@@ -159,8 +159,8 @@ const Index = () => {
     <div className="flex min-h-screen">
       {/* Sidebar */}
       <div className={cn(
-        "fixed left-0 top-0 h-full bg-secondary/30 backdrop-blur-md border-r border-primary/20 transition-all duration-300 z-20",
-        isSidebarOpen ? "w-64" : "w-16"
+        "fixed left-0 top-0 h-full bg-secondary/30 backdrop-blur-md transition-all duration-300 z-20",
+        isSidebarOpen ? "w-64 border-r border-primary/20" : "w-16"
       )}>
         <div className="p-4 flex flex-col h-full">
           <Button
