@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PersonaData, PersonaState } from '@/types/persona';
 import { useWire } from '@/hooks/useWire';
 import { usePersonaAvatar } from '@/hooks/usePersonaAvatar';
+import { BackstoryHoverCard } from "@/components/BackstoryHoverCard";
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -201,38 +202,39 @@ const Index = () => {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredPersonas.map((persona) => (
-            <div
-              key={persona.name}
-              className="persona-card glass-panel rounded-lg p-6 shadow-lg transition-all duration-300 border border-primary/20 hover:border-primary/40 flex flex-col items-center"
-            >
-              <img
-                src={persona.imageUrl}
-                alt={persona.name}
-                className="w-28 h-28 mb-4 rounded-full object-cover border-2 border-primary/30"
-              />
-              <h2 className="text-2xl font-bold mb-3 capitalize text-primary font-heading">{persona.name}</h2>
-              <p className="text-muted-foreground mb-4 line-clamp-2 text-center text-sm">
-                {persona.backstory}
-              </p>
-              {persona.traits && persona.traits.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 mb-4 justify-center">
-                  {persona.traits.map((trait, index) => (
-                    <span
-                      key={`${trait}-${index}`}
-                      className="bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-full text-xs"
-                    >
-                      {trait}
-                    </span>
-                  ))}
-                </div>
-              )}
-              <Button
-                className="w-full cyber-button mt-auto"
-                onClick={() => navigate(`/chat/${persona.name.toLowerCase()}`)}
+            <BackstoryHoverCard key={persona.name} backstory={persona.backstory}>
+              <div
+                className="persona-card glass-panel rounded-lg p-6 shadow-lg transition-all duration-300 border border-primary/20 hover:border-primary/40 flex flex-col items-center cursor-pointer"
               >
-                Chat Now
-              </Button>
-            </div>
+                <img
+                  src={persona.imageUrl}
+                  alt={persona.name}
+                  className="w-28 h-28 mb-4 rounded-full object-cover border-2 border-primary/30"
+                />
+                <h2 className="text-2xl font-bold mb-3 capitalize text-primary font-heading">{persona.name}</h2>
+                <p className="text-muted-foreground mb-4 line-clamp-2 text-center text-sm">
+                  {persona.backstory}
+                </p>
+                {persona.traits && persona.traits.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 mb-4 justify-center">
+                    {persona.traits.map((trait, index) => (
+                      <span
+                        key={`${trait}-${index}`}
+                        className="bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-full text-xs"
+                      >
+                        {trait}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <Button
+                  className="w-full cyber-button mt-auto"
+                  onClick={() => navigate(`/chat/${persona.name.toLowerCase()}`)}
+                >
+                  Chat Now
+                </Button>
+              </div>
+            </BackstoryHoverCard>
           ))}
         </div>
       )}
