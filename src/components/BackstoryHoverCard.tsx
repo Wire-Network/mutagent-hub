@@ -13,16 +13,16 @@ interface BackstoryHoverCardProps {
 
 export const BackstoryHoverCard = ({ children, backstory }: BackstoryHoverCardProps) => {
   return (
-    <HoverCard openDelay={100} closeDelay={150}>
-      <HoverCardTrigger asChild className="relative w-full h-full">
+    <HoverCard>
+      <HoverCardTrigger asChild className="block w-full h-full">
         {children}
       </HoverCardTrigger>
       <HoverCardContent 
-        className="absolute inset-0 w-full h-full m-0 p-0 bg-secondary/80 backdrop-blur-sm 
-        border-2 border-primary/50 rounded-lg transition-all duration-300 z-50 origin-center"
+        className="fixed w-[var(--radix-hover-card-trigger-width)] h-[var(--radix-hover-card-trigger-height)] 
+        bg-secondary/90 backdrop-blur-sm border-2 border-primary/50 rounded-lg 
+        transition-all duration-300 z-[100] p-0 m-0"
         align="center"
         sideOffset={0}
-        side="top"
       >
         <ScrollArea className="h-full w-full px-6 py-4">
           <div className="h-full flex items-center">
