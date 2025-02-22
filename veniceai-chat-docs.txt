@@ -1,0 +1,242 @@
+Chat
+Chat Completions
+Run text inference based on the supplied parameters.
+
+POST
+/
+chat
+/
+completions
+
+Try it
+Authorizations
+​
+Authorization
+string
+header
+required
+Bearer authentication header of the form Bearer <token>, where <token> is your auth token.
+
+Body
+application/json
+​
+model
+string
+required
+The ID of the model you wish to prompt. May also be a model trait, or a compatibility mapping. See the models endpoint for a list of models available to you.
+
+​
+messages
+object[]
+required
+A list of messages comprising the conversation so far. Depending on the model you use, different message types (modalities) are supported, like text and images.
+
+User Message
+Assistant Message
+Tool Message
+System Message
+
+Show child attributes
+
+​
+venice_parameters
+object
+Unique parameters to Venice's API implementation.
+
+
+Show child attributes
+
+​
+frequency_penalty
+number
+default:
+0
+Number between -2.0 and 2.0. Positive values penalize new tokens based on their existing frequency in the text so far, decreasing the model's likelihood to repeat the same line verbatim.
+
+Required range: -2 < x < 2
+​
+presence_penalty
+number
+default:
+0
+Number between -2.0 and 2.0. Positive values penalize new tokens based on whether they appear in the text so far, increasing the model's likelihood to talk about new topics.
+
+Required range: -2 < x < 2
+​
+n
+integer
+default:
+1
+How many chat completion choices to generate for each input message. Note that you will be charged based on the number of generated tokens across all of the choices. Keep n as 1 to minimize costs.
+
+​
+max_tokens
+integer
+The maximum number of tokens that can be generated in the chat completion. This value can be used to control costs for text generated via API. This value is now deprecated in favor of max_completion_tokens.
+
+​
+max_completion_tokens
+integer
+An upper bound for the number of tokens that can be generated for a completion, including visible output tokens and reasoning tokens.
+
+​
+temperature
+number
+default:
+1
+What sampling temperature to use, between 0 and 2. Higher values like 0.8 will make the output more random, while lower values like 0.2 will make it more focused and deterministic. We generally recommend altering this or top_p but not both.
+
+Required range: 0 < x < 2
+​
+top_p
+number
+default:
+1
+An alternative to sampling with temperature, called nucleus sampling, where the model considers the results of the tokens with top_p probability mass. So 0.1 means only the tokens comprising the top 10% probability mass are considered.
+
+Required range: 0 < x < 1
+​
+stop
+
+string
+Up to 4 sequences where the API will stop generating further tokens. Defaults to null.
+
+​
+stream
+boolean
+Whether to stream back partial progress. Defaults to false.
+
+​
+stream_options
+object
+
+Show child attributes
+
+​
+user
+string
+This field is discarded on the request but is supported in the Venice API for compatibility with OpenAPI clients.
+
+​
+parallel_tool_calls
+boolean
+default:
+true
+Whether to enable parallel function calling during tool use.
+
+​
+tools
+
+Option 1 · any | null
+A list of tools the model may call. Currently, only functions are supported as a tool. Use this to provide a list of functions the model may generate JSON inputs for.
+
+​
+tool_choice
+
+object
+
+Show child attributes
+
+Response
+200
+
+200
+application/json
+OK
+​
+id
+string
+required
+The ID of the request.
+
+​
+object
+enum<string>
+required
+The type of the object returned.
+
+Available options: chat.completion 
+​
+created
+integer
+required
+The time at which the request was created.
+
+​
+model
+string
+required
+The model id used for the request.
+
+​
+choices
+object[]
+required
+A list of chat completion choices. Can be more than one if n is greater than 1.
+
+
+Show child attributes
+
+​
+usage
+object
+required
+
+Show child attributes
+
+​
+prompt_logprobs
+
+Option 1 · any | null
+Log probability information for the prompt.
+
+
+const options = {
+  method: 'POST',
+  headers: {
+    Authorization: 'Bearer bcOZIyBSeCOsr6iK8wUu4xisFtHl-kKzO1ONIX4-lE',
+    'Content-Type': 'application/json'
+  },
+  body: '{"model":"llama-3.3-70b","messages":[{"role":"user","content":"<string>"}],"venice_parameters":{"include_venice_system_prompt":true,"character_slug":"venice"},"frequency_penalty":0,"presence_penalty":0,"n":1,"max_tokens":123,"max_completion_tokens":123,"temperature":0.7,"top_p":0.9,"stop":"<string>","stream":true,"stream_options":{"include_usage":true},"user":"<string>","parallel_tool_calls":false,"tools":"<any>","tool_choice":{"type":"<string>","function":{"name":"<string>"}}}'
+};
+
+fetch('https://api.venice.ai/api/v1/chat/completions', options)
+  .then(response => response.json())
+  .then(response => console.log(response))
+  .catch(err => console.error(err));
+200
+400
+401
+402
+415
+429
+500
+503
+
+{
+  "id": "chatcmpl-a81fbc2d81a7a083bb83ccf9f44c6e5e",
+  "object": "chat.completion",
+  "created": 1739928524,
+  "model": "qwen-2.5-vl",
+  "choices": [
+    {
+      "index": 0,
+      "message": {
+        "role": "assistant",
+        "reasoning_content": null,
+        "content": "The sky appears blue because of the way Earth's atmosphere scatters sunlight. When sunlight reaches Earth's atmosphere, it is made up of various colors of the spectrum, but blue light waves are shorter and scatter more easily when they hit the gases and particles in the atmosphere. This scattering occurs in all directions, but from our perspective on the ground, it appears as a blue hue that dominates the sky's color. This phenomenon is known as Rayleigh scattering. During sunrise and sunset, the sunlight has to travel further through the atmosphere, which allows more time for the blue light to scatter away from our direct line of sight, leaving the longer wavelengths, such as red, yellow, and orange, to dominate the sky's color.",
+        "tool_calls": []
+      },
+      "logprobs": null,
+      "finish_reason": "stop",
+      "stop_reason": null
+    }
+  ],
+  "usage": {
+    "prompt_tokens": 612,
+    "total_tokens": 758,
+    "completion_tokens": 146,
+    "prompt_tokens_details": null
+  },
+  "prompt_logprobs": null
+}
