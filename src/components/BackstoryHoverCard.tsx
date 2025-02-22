@@ -14,14 +14,15 @@ interface BackstoryHoverCardProps {
 export const BackstoryHoverCard = ({ children, backstory }: BackstoryHoverCardProps) => {
   return (
     <HoverCard openDelay={100} closeDelay={150}>
-      <HoverCardTrigger asChild>
+      <HoverCardTrigger asChild className="relative w-full h-full">
         {children}
       </HoverCardTrigger>
       <HoverCardContent 
         className="absolute inset-0 w-full h-full m-0 p-0 bg-secondary/80 backdrop-blur-sm 
-        border-2 border-primary/50 rounded-lg transition-all duration-300"
+        border-2 border-primary/50 rounded-lg transition-all duration-300 z-50 origin-center"
         align="center"
         sideOffset={0}
+        side="top"
       >
         <ScrollArea className="h-full w-full px-6 py-4">
           <div className="h-full flex items-center">
