@@ -156,8 +156,9 @@ const Index = () => {
     <div className="flex min-h-screen">
       {/* Sidebar */}
       <div className={cn(
-        "fixed left-0 top-0 h-full bg-secondary/30 backdrop-blur-md border-r border-primary/20 transition-all duration-300 z-20",
-        isSidebarOpen ? "w-64" : "w-16"
+        "fixed left-0 top-0 h-full bg-secondary/30 backdrop-blur-md border-r border-primary/20 z-20",
+        isSidebarOpen ? "w-64" : "w-16",
+        "transition-[width] duration-300 ease-in-out"
       )}>
         <div className="p-4 flex flex-col h-full">
           <Button
@@ -168,43 +169,44 @@ const Index = () => {
           >
             <Menu className="h-4 w-4" />
           </Button>
-          {isSidebarOpen && (
-            <>
-              <div className="space-y-4 flex-1">
-                <div>
-                  <h2 className="text-xl font-bold text-primary font-heading">Mutagent</h2>
-                  <div className="border-t border-primary/20 mt-4 pt-4">
-                    <p className="text-sm text-muted-foreground">
-                      Choose your companion and start chatting with unique AI personas.
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="mt-auto">
-                  <AddPersonaDialog onPersonaAdded={refreshPersonas} />
+          <div className={cn(
+            "flex-1 flex flex-col",
+            !isSidebarOpen && "hidden"
+          )}>
+            <div className="space-y-4 flex-1">
+              <div>
+                <h2 className="text-xl font-bold text-primary font-heading whitespace-nowrap overflow-hidden">Mutagent</h2>
+                <div className="border-t border-primary/20 mt-4 pt-4">
+                  <p className="text-sm text-muted-foreground whitespace-nowrap overflow-hidden">
+                    Choose your companion and start chatting with unique AI personas.
+                  </p>
                 </div>
               </div>
+              
+              <div className="mt-auto">
+                <AddPersonaDialog onPersonaAdded={refreshPersonas} />
+              </div>
+            </div>
 
-              <div className="mt-4 pt-4 border-t border-primary/20">
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => {
-                    logout();
-                    navigate('/login');
-                  }}
-                >
-                  Sign Out
-                </Button>
-              </div>
-            </>
-          )}
+            <div className="mt-4 pt-4 border-t border-primary/20">
+              <Button 
+                variant="outline" 
+                className="w-full whitespace-nowrap"
+                onClick={() => {
+                  logout();
+                  navigate('/login');
+                }}
+              >
+                Sign Out
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
 
       {/* Main Content */}
       <div className={cn(
-        "flex-1 transition-all duration-300",
+        "flex-1 transition-[margin] duration-300 ease-in-out",
         isSidebarOpen ? "ml-64" : "ml-16"
       )}>
         <div className="container px-6 py-8">
