@@ -199,27 +199,27 @@ const Index = () => {
           No personas available. Create one to get started!
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredPersonas.map((persona) => (
             <div
               key={persona.name}
-              className="persona-card glass-panel rounded-lg p-8 shadow-lg transition-all duration-300 border border-primary/20 hover:border-primary/40 flex flex-col items-center"
+              className="persona-card glass-panel rounded-lg p-6 shadow-lg transition-all duration-300 border border-primary/20 hover:border-primary/40 flex flex-col items-center"
             >
               <img
                 src={persona.imageUrl}
                 alt={persona.name}
-                className="w-40 h-40 mb-6 rounded-full object-cover border-2 border-primary/30"
+                className="w-28 h-28 mb-4 rounded-full object-cover border-2 border-primary/30"
               />
-              <h2 className="text-3xl font-bold mb-4 capitalize text-primary font-heading">{persona.name}</h2>
-              <p className="text-muted-foreground mb-6 line-clamp-3 text-center">
+              <h2 className="text-2xl font-bold mb-3 capitalize text-primary font-heading">{persona.name}</h2>
+              <p className="text-muted-foreground mb-4 line-clamp-2 text-center text-sm">
                 {persona.backstory}
               </p>
               {persona.traits && persona.traits.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-6 justify-center">
+                <div className="flex flex-wrap gap-1.5 mb-4 justify-center">
                   {persona.traits.map((trait, index) => (
                     <span
                       key={`${trait}-${index}`}
-                      className="bg-primary/10 text-primary border border-primary/20 px-3 py-1.5 rounded-full text-sm"
+                      className="bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-full text-xs"
                     >
                       {trait}
                     </span>
