@@ -64,7 +64,7 @@ export function PersonaDialog({ open, onOpenChange, personaName }: PersonaDialog
                         <span className="capitalize">{personaName}</span>
                     </DialogTitle>
                     <DialogDescription>
-                        Learn more about your AI companion
+                        About
                     </DialogDescription>
                 </DialogHeader>
                 <div className="mt-4 space-y-4">
