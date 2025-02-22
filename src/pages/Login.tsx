@@ -62,17 +62,21 @@ const Login = () => {
         try {
             const address = await metamaskService.connectWallet();
             
-            // For now, we'll use a simple message to sign
-            const message = `Login to WIRE with account: ${accountName}`;
+            // Check if account exists or create new one
+            const wireName = await metamaskService.checkAndCreateAccount(address);
+            
+            // Sign login message
+            const message = `Login to WIRE with account: ${wireName}`;
             const signature = await metamaskService.signMessage(message);
             
-            // Store the signature in localStorage for future use
+            // Store authentication data
             localStorage.setItem('metamask_signature', signature);
             localStorage.setItem('metamask_address', address);
+            localStorage.setItem('wire_account', wireName);
             
             toast({
                 title: "Success",
-                description: "Successfully connected with MetaMask!",
+                description: `Successfully connected with MetaMask! WIRE account: ${wireName}`,
             });
             
             navigate('/');
