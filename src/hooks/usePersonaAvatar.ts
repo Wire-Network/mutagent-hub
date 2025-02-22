@@ -5,6 +5,7 @@ import { PinataService } from '@/services/pinata-service';
 
 // Cache in memory during session
 const AVATAR_CACHE = new Map<string, string>();
+const AVATAR_CID_CACHE = new Map<string, string>();
 
 interface GenerateAvatarOptions {
     model: string;
@@ -35,17 +36,18 @@ export function usePersonaAvatar() {
 
         try {
             // Try to fetch existing avatar from IPFS first
-            const avatarName = `avatar-${personaName}`;
-            try {
-                console.log('Attempting to fetch existing avatar:', avatarName);
-                const existingAvatar = await pinataService.getContent(avatarName);
-                if (existingAvatar?.imageData) {
-                    console.log('Found existing avatar in IPFS:', avatarName);
-                    AVATAR_CACHE.set(personaName, existingAvatar.imageData);
-                    return existingAvatar.imageData;
+            if (AVATAR_CID_CACHE.has(personaName)) {
+                const cid = AVATAR_CID_CACHE.get(personaName)!;
+                try {
+                    const existingAvatar = await pinataService.getContent(cid);
+                    if (existingAvatar?.imageData) {
+                        console.log('Found existing avatar in IPFS with CID:', cid);
+                        AVATAR_CACHE.set(personaName, existingAvatar.imageData);
+                        return existingAvatar.imageData;
+                    }
+                } catch (error) {
+                    console.log('Failed to fetch existing avatar, generating new one...');
                 }
-            } catch (error) {
-                console.log('No existing avatar found in IPFS, generating new one...');
             }
 
             setIsGenerating(true);
@@ -80,7 +82,7 @@ export function usePersonaAvatar() {
             const data = await response.json();
             const imageBase64 = data.images[0];
 
-            // Store in IPFS with metadata
+            // Store in IPFS
             const avatarData = {
                 imageData: imageBase64,
                 metadata: {
@@ -90,11 +92,12 @@ export function usePersonaAvatar() {
                 } as AvatarMetadata
             };
 
-            // Upload to IPFS with the avatar name
-            await pinataService.uploadJSON(avatarData, avatarName);
-            console.log('Stored new avatar in IPFS:', avatarName);
+            // Upload to IPFS and get CID
+            const cid = await pinataService.uploadJSON(avatarData);
+            console.log('Stored new avatar in IPFS with CID:', cid);
 
-            // Cache in memory
+            // Cache both the CID and the image data
+            AVATAR_CID_CACHE.set(personaName, cid);
             AVATAR_CACHE.set(personaName, imageBase64);
 
             return imageBase64;

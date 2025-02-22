@@ -26,22 +26,13 @@ export class PinataService {
         return PinataService.instance;
     }
 
-    async uploadJSON(content: any, name?: string): Promise<string> {
+    async uploadJSON(content: any): Promise<string> {
         try {
-            const options = name ? {
-                pinataMetadata: {
-                    name,
-                    keyvalues: {
-                        contentType: 'application/json'
-                    }
-                }
-            } : undefined;
-
             // Convert content to File object
             const blob = new Blob([JSON.stringify(content)], { type: 'application/json' });
-            const file = new File([blob], `${name || 'content'}.json`, { type: 'application/json' });
+            const file = new File([blob], 'content.json', { type: 'application/json' });
 
-            const result = await this.pinata.upload.file(file, options);
+            const result = await this.pinata.upload.file(file);
             console.log('Content uploaded to Pinata:', result);
             return result.IpfsHash;
         } catch (error) {
@@ -50,26 +41,10 @@ export class PinataService {
         }
     }
 
-    async getContent(hashOrName: string): Promise<any> {
+    async getContent(cid: string): Promise<any> {
         try {
-            // First try to get by hash directly
-            try {
-                const data = await this.pinata.gateways.get(hashOrName);
-                return data;
-            } catch (error) {
-                // If direct hash lookup fails, try searching by name
-                console.log('Direct CID lookup failed, searching by name...');
-                const files = await this.pinata.search.files({
-                    metadata: { name: hashOrName }
-                });
-
-                if (files && files.length > 0) {
-                    // Get the most recent file with matching name
-                    const mostRecent = files[0];
-                    return await this.pinata.gateways.get(mostRecent.IpfsHash);
-                }
-                throw new Error('Content not found');
-            }
+            const data = await this.pinata.gateways.get(cid);
+            return data;
         } catch (error) {
             console.error('Error fetching from IPFS:', error);
             throw error;
