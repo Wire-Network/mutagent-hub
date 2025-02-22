@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -14,6 +13,7 @@ import { usePersonaAvatar } from '@/hooks/usePersonaAvatar';
 import { Search, Menu } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { PinataService } from "@/services/pinata-service";
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -25,6 +25,7 @@ const Index = () => {
   const { generateAvatar, isGenerating } = usePersonaAvatar();
   const [personaAvatars, setPersonaAvatars] = useState<Map<string, string>>(new Map());
   const queryClient = useQueryClient();
+  const pinataService = PinataService.getInstance();
 
   const { data: personas = [], isLoading, error: queryError } = useQuery({
     queryKey: ['personas'],
@@ -60,16 +61,18 @@ const Index = () => {
             const stateData = await getContent(personaInfo.initial_state_cid) as PersonaState;
             console.log('Persona state data:', stateData);
             
-            // Generate avatar if not already generated
+            // Use stored avatar if available
             let imageUrl = "/placeholder.svg";
-            if (!personaAvatars.has(persona.persona_name)) {
-              const avatarBase64 = await generateAvatar(persona.persona_name, stateData.data.text);
-              if (avatarBase64) {
-                imageUrl = `data:image/png;base64,${avatarBase64}`;
-                setPersonaAvatars(prev => new Map(prev).set(persona.persona_name, imageUrl));
+            if (stateData.data.avatar_cid) {
+              try {
+                const avatarData = await pinataService.getContent(stateData.data.avatar_cid);
+                if (avatarData?.imageData) {
+                  imageUrl = `data:image/png;base64,${avatarData.imageData}`;
+                  setPersonaAvatars(prev => new Map(prev).set(persona.persona_name, imageUrl));
+                }
+              } catch (error) {
+                console.error(`Error fetching avatar for ${persona.persona_name}:`, error);
               }
-            } else {
-              imageUrl = personaAvatars.get(persona.persona_name)!;
             }
             
             return {
