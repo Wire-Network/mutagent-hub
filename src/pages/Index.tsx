@@ -11,6 +11,7 @@ import { Navigate } from "react-router-dom";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PersonaData, PersonaState } from '@/types/persona';
 import { useWire } from '@/hooks/useWire';
+import { usePersonaAvatar } from '@/hooks/usePersonaAvatar';
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -18,7 +19,8 @@ const Index = () => {
   const { getPersonas, getPersonaInfo, loading: wireLoading, error: wireError } = useWire();
   const { isReady, getContent } = usePersonaContent();
   const { isAuthenticated } = useAuth();
-  const hasLoadedPersonas = useRef(false);
+  const { generateAvatar, isGenerating } = usePersonaAvatar();
+  const [personaAvatars, setPersonaAvatars] = useState<Map<string, string>>(new Map());
 
   // Redirect to login if not authenticated
   if (!isAuthenticated) {
@@ -59,11 +61,23 @@ const Index = () => {
             const stateData = await getContent(personaInfo.initial_state_cid) as PersonaState;
             console.log('Persona state data:', stateData);
             
+            // Generate avatar if not already generated
+            let imageUrl = "/placeholder.svg";
+            if (!personaAvatars.has(persona.persona_name)) {
+              const avatarBase64 = await generateAvatar(persona.persona_name, stateData.data.text);
+              if (avatarBase64) {
+                imageUrl = `data:image/png;base64,${avatarBase64}`;
+                setPersonaAvatars(prev => new Map(prev).set(persona.persona_name, imageUrl));
+              }
+            } else {
+              imageUrl = personaAvatars.get(persona.persona_name)!;
+            }
+            
             return {
               name: persona.persona_name,
               backstory: stateData.data.text,
               traits: stateData.data.traits || [],
-              imageUrl: "/placeholder.svg"
+              imageUrl
             };
           } catch (error) {
             console.error(`Error fetching data for ${persona.persona_name}:`, error);
@@ -120,7 +134,7 @@ const Index = () => {
         </Alert>
       )}
 
-      {isLoading && (
+      {(isLoading || isGenerating) && (
         <Alert className="mb-4">
           <AlertDescription>
             <div className="flex items-center gap-2">
@@ -128,7 +142,7 @@ const Index = () => {
               <div>
                 <div>Loading personas...</div>
                 <div className="text-sm text-muted-foreground">
-                  Fetching data from IPFS network
+                  {isGenerating ? "Generating avatars..." : "Fetching data from IPFS network"}
                 </div>
               </div>
             </div>
@@ -150,7 +164,7 @@ const Index = () => {
               <img
                 src={persona.imageUrl}
                 alt={persona.name}
-                className="w-32 h-32 mx-auto mb-4 rounded-full"
+                className="w-32 h-32 mx-auto mb-4 rounded-full object-cover"
               />
               <h2 className="text-2xl font-bold mb-2 capitalize">{persona.name}</h2>
               <p className="text-muted-foreground mb-4 line-clamp-3">

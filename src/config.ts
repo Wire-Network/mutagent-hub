@@ -5,6 +5,9 @@ interface ImportMetaEnv {
   VITE_PINATA_JWT: string;
   VITE_PERSONA_WASM: string;
   VITE_PERSONA_ABI: string;
+  VITE_PINATA_GATEWAY: string;
+  VITE_VENICE_API_KEY: string;
+  VITE_VENICE_API_ENDPOINT: string;
 }
 
 const config = {
@@ -19,6 +22,10 @@ const config = {
   pinata: {
     jwt: import.meta.env.VITE_PINATA_JWT,
     gateway: import.meta.env.VITE_PINATA_GATEWAY,
+    },
+    venice: {
+        apiKey: import.meta.env.VITE_VENICE_API_KEY,
+        endpoint: import.meta.env.VITE_VENICE_API_ENDPOINT
     }
 } as const;
 
