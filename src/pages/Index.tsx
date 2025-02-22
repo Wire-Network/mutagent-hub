@@ -166,12 +166,12 @@ const Index = () => {
             variant="ghost"
             size="icon"
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="w-8 h-8 m-8"
+            className="w-8 h-8 mx-6 my-8"
           >
             <Menu className="h-4 w-4" />
           </Button>
           {isSidebarOpen && (
-            <div className="px-4 flex flex-col h-full">
+            <div className="px-6 flex flex-col h-full">
               <div className="space-y-4 flex-1">
                 <div>
                   <h2 className="text-xl font-bold text-primary font-heading">Mutagent</h2>
