@@ -12,6 +12,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PersonaData, PersonaState } from '@/types/persona';
 import { useWire } from '@/hooks/useWire';
 import { usePersonaAvatar } from '@/hooks/usePersonaAvatar';
+import { AnimatedBackground } from "@/components/AnimatedBackground";
+import { motion } from "framer-motion";
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
@@ -113,95 +115,116 @@ const Index = () => {
   );
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-4xl font-bold">Choose Your Chat Companion</h1>
-        <AddPersonaDialog onPersonaAdded={refreshPersonas} />
-      </div>
-      
-      {queryError && (
-        <Alert variant="destructive" className="mb-4">
-          <AlertDescription>
-            Error loading personas: {queryError instanceof Error ? queryError.message : "Unknown error"}
-          </AlertDescription>
-        </Alert>
-      )}
+    <>
+      <AnimatedBackground />
+      <div className="container mx-auto px-4 py-8 relative">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="flex justify-between items-center mb-8"
+        >
+          <h1 className="text-4xl font-bold">Choose Your Chat Companion</h1>
+          <AddPersonaDialog onPersonaAdded={refreshPersonas} />
+        </motion.div>
+        
+        {queryError && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>
+              Error loading personas: {queryError instanceof Error ? queryError.message : "Unknown error"}
+            </AlertDescription>
+          </Alert>
+        )}
 
-      {!isReady && (
-        <Alert className="mb-4">
-          <AlertDescription>
-            <div className="flex items-center gap-2">
-              <div className="animate-spin h-4 w-4 border-2 border-primary rounded-full border-t-transparent"></div>
-              Initializing IPFS connection...
-            </div>
-            <div className="text-sm text-muted-foreground mt-2">
-              This may take a few moments. Please wait...
-            </div>
-          </AlertDescription>
-        </Alert>
-      )}
+        {!isReady && (
+          <Alert className="mb-4">
+            <AlertDescription>
+              <div className="flex items-center gap-2">
+                <div className="animate-spin h-4 w-4 border-2 border-primary rounded-full border-t-transparent"></div>
+                Initializing IPFS connection...
+              </div>
+              <div className="text-sm text-muted-foreground mt-2">
+                This may take a few moments. Please wait...
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
 
-      {(isLoading || isGenerating) && (
-        <Alert className="mb-4">
-          <AlertDescription>
-            <div className="flex items-center gap-2">
-              <div className="animate-spin h-4 w-4 border-2 border-primary rounded-full border-t-transparent"></div>
-              <div>
-                <div>Loading personas...</div>
-                <div className="text-sm text-muted-foreground">
-                  {isGenerating ? "Generating avatars..." : "Fetching data from IPFS network"}
+        {(isLoading || isGenerating) && (
+          <Alert className="mb-4">
+            <AlertDescription>
+              <div className="flex items-center gap-2">
+                <div className="animate-spin h-4 w-4 border-2 border-primary rounded-full border-t-transparent"></div>
+                <div>
+                  <div>Loading personas...</div>
+                  <div className="text-sm text-muted-foreground">
+                    {isGenerating ? "Generating avatars..." : "Fetching data from IPFS network"}
+                  </div>
                 </div>
               </div>
-            </div>
-          </AlertDescription>
-        </Alert>
-      )}
+            </AlertDescription>
+          </Alert>
+        )}
 
-      {personas.length === 0 ? (
-        <div className="text-center text-muted-foreground">
-          No personas available. Create one to get started!
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredPersonas.map((persona) => (
-            <div
-              key={persona.name}
-              className="bg-card rounded-lg p-6 shadow-lg hover:shadow-xl transition-shadow"
-            >
-              <img
-                src={persona.imageUrl}
-                alt={persona.name}
-                className="w-32 h-32 mx-auto mb-4 rounded-full object-cover"
-              />
-              <h2 className="text-2xl font-bold mb-2 capitalize">{persona.name}</h2>
-              <p className="text-muted-foreground mb-4 line-clamp-3">
-                {persona.backstory}
-              </p>
-              {persona.traits && persona.traits.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-4">
-                  {persona.traits.map((trait, index) => (
-                    <span
-                      key={`${trait}-${index}`}
-                      className="bg-accent/50 px-2 py-1 rounded-full text-xs"
-                    >
-                      {trait}
-                    </span>
-                  ))}
-                </div>
-              )}
-              <Button
-                className="w-full"
-                onClick={() => navigate(`/chat/${persona.name.toLowerCase()}`)}
+        {personas.length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="text-center text-muted-foreground"
+          >
+            No personas available. Create one to get started!
+          </motion.div>
+        ) : (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          >
+            {filteredPersonas.map((persona, index) => (
+              <motion.div
+                key={persona.name}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.1 }}
+                whileHover={{ scale: 1.02, transition: { duration: 0.2 } }}
+                className="bg-card/70 backdrop-blur-sm rounded-lg p-6 shadow-lg hover:shadow-xl transition-shadow"
               >
-                Chat Now
-              </Button>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
+                <img
+                  src={persona.imageUrl}
+                  alt={persona.name}
+                  className="w-32 h-32 mx-auto mb-4 rounded-full object-cover"
+                />
+                <h2 className="text-2xl font-bold mb-2 capitalize">{persona.name}</h2>
+                <p className="text-muted-foreground mb-4 line-clamp-3">
+                  {persona.backstory}
+                </p>
+                {persona.traits && persona.traits.length > 0 && (
+                  <div className="flex flex-wrap gap-2 mb-4">
+                    {persona.traits.map((trait, index) => (
+                      <span
+                        key={`${trait}-${index}`}
+                        className="bg-accent/50 px-2 py-1 rounded-full text-xs"
+                      >
+                        {trait}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <Button
+                  className="w-full"
+                  onClick={() => navigate(`/chat/${persona.name.toLowerCase()}`)}
+                >
+                  Chat Now
+                </Button>
+              </motion.div>
+            ))}
+          </motion.div>
+        )}
+      </div>
+    </>
   );
 };
 
 export default Index;
-
