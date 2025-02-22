@@ -151,8 +151,8 @@ const Index = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-4xl font-bold text-gradient">Choose Your Chat Companion</h1>
+      <div className="flex justify-between items-center mb-12">
+        <h1 className="text-4xl font-bold text-gradient font-heading">Choose Your Chat Companion</h1>
         <AddPersonaDialog onPersonaAdded={refreshPersonas} />
       </div>
       
@@ -199,27 +199,27 @@ const Index = () => {
           No personas available. Create one to get started!
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
           {filteredPersonas.map((persona) => (
             <div
               key={persona.name}
-              className="persona-card glass-panel rounded-lg p-6 shadow-lg transition-all duration-300 border border-primary/20 hover:border-primary/40"
+              className="persona-card glass-panel rounded-lg p-8 shadow-lg transition-all duration-300 border border-primary/20 hover:border-primary/40 flex flex-col items-center"
             >
               <img
                 src={persona.imageUrl}
                 alt={persona.name}
-                className="w-32 h-32 mx-auto mb-4 rounded-full object-cover border-2 border-primary/30"
+                className="w-40 h-40 mb-6 rounded-full object-cover border-2 border-primary/30"
               />
-              <h2 className="text-2xl font-bold mb-2 capitalize text-primary">{persona.name}</h2>
-              <p className="text-muted-foreground mb-4 line-clamp-3">
+              <h2 className="text-3xl font-bold mb-4 capitalize text-primary font-heading">{persona.name}</h2>
+              <p className="text-muted-foreground mb-6 line-clamp-3 text-center">
                 {persona.backstory}
               </p>
               {persona.traits && persona.traits.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-4">
+                <div className="flex flex-wrap gap-2 mb-6 justify-center">
                   {persona.traits.map((trait, index) => (
                     <span
                       key={`${trait}-${index}`}
-                      className="bg-primary/10 text-primary border border-primary/20 px-2 py-1 rounded-full text-xs"
+                      className="bg-primary/10 text-primary border border-primary/20 px-3 py-1.5 rounded-full text-sm"
                     >
                       {trait}
                     </span>
@@ -227,7 +227,7 @@ const Index = () => {
                 </div>
               )}
               <Button
-                className="w-full cyber-button"
+                className="w-full cyber-button mt-auto"
                 onClick={() => navigate(`/chat/${persona.name.toLowerCase()}`)}
               >
                 Chat Now
