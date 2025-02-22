@@ -160,6 +160,7 @@ export class MetaMaskService {
                     name: 'newaccount',
                     authorization: [{ actor: 'sysio', permission: 'active' }],
                     data: {
+                        creator: 'sysio',
                         account_name: wireName,
                         public_key: formattedPubKey,
                         address: address
