@@ -1,3 +1,4 @@
+
 import type { Config } from "tailwindcss";
 
 export default {
@@ -25,33 +26,37 @@ export default {
         background: "hsl(var(--background))",
         foreground: "hsl(var(--foreground))",
         primary: {
-          DEFAULT: "#4F46E5",
-          foreground: "#FFFFFF",
+          DEFAULT: "#78FF00", // Toxic Green
+          foreground: "#210223", // Dark Purple
         },
         secondary: {
-          DEFAULT: "#3CBBF0",
-          foreground: "#FFFFFF",
+          DEFAULT: "#210223", // Dark Purple
+          foreground: "#78FF00", // Toxic Green
         },
         destructive: {
           DEFAULT: "hsl(var(--destructive))",
           foreground: "hsl(var(--destructive-foreground))",
         },
         muted: {
-          DEFAULT: "#374151",
-          foreground: "#9CA3AF",
+          DEFAULT: "#716965", // Gunmetal
+          foreground: "#ffffff",
         },
         accent: {
-          DEFAULT: "#312E81",
-          foreground: "#FFFFFF",
+          DEFAULT: "#78FF00", // Toxic Green
+          foreground: "#210223", // Dark Purple
         },
         card: {
-          DEFAULT: "#1E1E2E",
-          foreground: "#F8FAFC",
+          DEFAULT: "#210223", // Dark Purple
+          foreground: "#ffffff",
         },
       },
       fontFamily: {
-        sans: ["Inter", "sans-serif"],
-        heading: ["Space Grotesk", "sans-serif"],
+        sans: ["Space Grotesk", "system-ui", "sans-serif"],
+        heading: ["Orbitron", "Space Grotesk", "sans-serif"],
+      },
+      boxShadow: {
+        'neon': "0 0 5px #78FF00, 0 0 20px #78FF00, 0 0 30px #78FF00",
+        'neon-sm': "0 0 2px #78FF00, 0 0 10px #78FF00",
       },
       keyframes: {
         "accordion-down": {
@@ -62,15 +67,15 @@ export default {
           from: { height: "var(--radix-accordion-content-height)" },
           to: { height: "0" },
         },
-        pulse: {
-          "0%, 100%": { opacity: "1" },
-          "50%": { opacity: "0.5" },
+        'glow': {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.5' },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        pulse: "pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+        'glow': 'glow 2s ease-in-out infinite',
       },
     },
   },
