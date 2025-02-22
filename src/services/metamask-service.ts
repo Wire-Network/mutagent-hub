@@ -62,7 +62,8 @@ export class MetaMaskService {
             const message = `${address}${nonce}${username}`;
             const messageHash = ethers.id(message);
             
-            const ethSignature = await this.signMessage(ethers.getBytes(messageHash));
+            // Convert the hash to a string for signing
+            const ethSignature = await this.signMessage(messageHash);
             const wireSignature = this.evmSigToWIRE(ethSignature);
 
             await this.wireService.pushTransaction({
@@ -82,4 +83,3 @@ export class MetaMaskService {
         }
     }
 }
-
