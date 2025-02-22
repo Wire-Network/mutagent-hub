@@ -1,4 +1,6 @@
+
 import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { AddPersonaDialog } from "@/components/AddPersonaDialog";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -9,10 +11,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PersonaData, PersonaState } from '@/types/persona';
 import { useWire } from '@/hooks/useWire';
 import { usePersonaAvatar } from '@/hooks/usePersonaAvatar';
-import { PersonaCard } from "@/components/PersonaCard";
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const navigate = useNavigate();
   const { getPersonas, getPersonaInfo, loading: wireLoading, error: wireError } = useWire();
   const { isReady, getContent } = usePersonaContent();
   const { isAuthenticated } = useAuth();
@@ -131,7 +133,7 @@ const Index = () => {
         card.removeEventListener('mouseleave', handleMouseLeave);
       });
     };
-  }, [personas]);
+  }, [personas]); // Now personas is defined before being used in the dependency array
 
   const refreshPersonas = () => {
     queryClient.invalidateQueries({ queryKey: ['personas'] });
@@ -149,8 +151,8 @@ const Index = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-12">
-        <h1 className="text-4xl font-bold text-gradient font-heading">Choose Your Chat Companion</h1>
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-4xl font-bold text-gradient">Choose Your Chat Companion</h1>
         <AddPersonaDialog onPersonaAdded={refreshPersonas} />
       </div>
       
@@ -197,9 +199,40 @@ const Index = () => {
           No personas available. Create one to get started!
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredPersonas.map((persona) => (
-            <PersonaCard key={persona.name} persona={persona} />
+            <div
+              key={persona.name}
+              className="persona-card glass-panel rounded-lg p-6 shadow-lg transition-all duration-300 border border-primary/20 hover:border-primary/40"
+            >
+              <img
+                src={persona.imageUrl}
+                alt={persona.name}
+                className="w-32 h-32 mx-auto mb-4 rounded-full object-cover border-2 border-primary/30"
+              />
+              <h2 className="text-2xl font-bold mb-2 capitalize text-primary">{persona.name}</h2>
+              <p className="text-muted-foreground mb-4 line-clamp-3">
+                {persona.backstory}
+              </p>
+              {persona.traits && persona.traits.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {persona.traits.map((trait, index) => (
+                    <span
+                      key={`${trait}-${index}`}
+                      className="bg-primary/10 text-primary border border-primary/20 px-2 py-1 rounded-full text-xs"
+                    >
+                      {trait}
+                    </span>
+                  ))}
+                </div>
+              )}
+              <Button
+                className="w-full cyber-button"
+                onClick={() => navigate(`/chat/${persona.name.toLowerCase()}`)}
+              >
+                Chat Now
+              </Button>
+            </div>
           ))}
         </div>
       )}
