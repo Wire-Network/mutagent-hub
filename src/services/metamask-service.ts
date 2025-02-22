@@ -1,7 +1,8 @@
+
 import { ethers } from 'ethers';
 import { WireService } from './wire-service';
 import config from '../config';
-import { PermissionLevel, Name, KeyType, Bytes, PublicKey } from '@wireio/core';
+import { PermissionLevel, Name, KeyType, Bytes, PublicKey, getCurve } from '@wireio/core';
 
 export class MetaMaskService {
     private static instance: MetaMaskService;
