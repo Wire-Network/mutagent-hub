@@ -2,6 +2,7 @@
 import { ethers } from 'ethers';
 import { WireService } from './wire-service';
 import config from '../config';
+import { PermissionLevel, Name } from '@wireio/core';
 
 export class MetaMaskService {
     private static instance: MetaMaskService;
@@ -153,12 +154,20 @@ export class MetaMaskService {
             // Format public key for WIRE
             const formattedPubKey = `PUB_EM_${publicKey.slice(2)}`;
 
+            // Prepare sysio authorization
+            const sysioAuth = [
+                PermissionLevel.from({ 
+                    actor: Name.from('sysio'), 
+                    permission: Name.from('active') 
+                })
+            ];
+
             // Register account on WIRE with sysio authority
             await this.wireService.pushTransaction(
                 {
                     account: 'sysio',
                     name: 'newaccount',
-                    authorization: [{ actor: 'sysio', permission: 'active' }],
+                    authorization: sysioAuth,
                     data: {
                         creator: 'sysio',
                         name: wireName,
@@ -179,8 +188,7 @@ export class MetaMaskService {
                             }],
                             accounts: [],
                             waits: []
-                        },
-                        address: address
+                        }
                     }
                 },
                 config.wire.demoPrivateKey
