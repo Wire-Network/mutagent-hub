@@ -186,7 +186,7 @@ const Index = () => {
                 
                 <div className="mt-auto">
                   <Button 
-                    variant="outline" 
+                    variant="default" 
                     className="w-full cyber-button"
                     onClick={() => {
                       setOpen(!open)
@@ -200,7 +200,7 @@ const Index = () => {
 
               <div className="mt-4 pt-4 border-t border-primary/20">
                 <Button 
-                  variant="outline" 
+                  variant="default" 
                   className="w-full cyber-button"
                   onClick={() => {
                     logout();
