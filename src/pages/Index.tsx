@@ -21,7 +21,7 @@ const Index = () => {
   const navigate = useNavigate();
   const { getPersonas, getPersonaInfo, loading: wireLoading, error: wireError } = useWire();
   const { isReady, getContent } = usePersonaContent();
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, logout, accountName } = useAuth();
   const { generateAvatar, isGenerating } = usePersonaAvatar();
   const [personaAvatars, setPersonaAvatars] = useState<Map<string, string>>(new Map());
   const queryClient = useQueryClient();
@@ -208,9 +208,12 @@ const Index = () => {
         isSidebarOpen ? "ml-64" : "ml-16"
       )}>
         <div className="container px-6 py-8">
-          {/* Header with Search */}
+          {/* Header with Welcome Message and Search */}
           <div className="flex justify-between items-center mb-8">
-            <div className="flex-1 max-w-md">
+            <div className="text-xl font-heading text-primary">
+              Welcome back, <span className="font-bold">{accountName}</span>
+            </div>
+            <div className="w-64">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                 <Input
