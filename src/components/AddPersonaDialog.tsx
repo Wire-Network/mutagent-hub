@@ -17,6 +17,8 @@ import { usePersonaContent } from "@/hooks/usePersonaContent"
 import { WireService } from "@/services/wire-service"
 import config from "@/config"
 import { useQueryClient } from '@tanstack/react-query'
+import { usePersonaAvatar } from "@/hooks/usePersonaAvatar"
+import { PinataService } from "@/services/pinata-service"
 
 export function AddPersonaDialog({ onPersonaAdded }: { onPersonaAdded?: () => void }) {
   const [open, setOpen] = useState(false)
@@ -30,6 +32,7 @@ export function AddPersonaDialog({ onPersonaAdded }: { onPersonaAdded?: () => vo
   const { isReady, uploadContent } = usePersonaContent()
   const wireService = WireService.getInstance()
   const queryClient = useQueryClient()
+  const pinataService = PinataService.getInstance()
 
   const generateRandomPersona = async () => {
     setIsGenerating(true)
@@ -179,78 +182,95 @@ Remember:
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
     
     if (!validateName(name)) {
-      return
+        return;
     }
 
     if (!isReady) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "IPFS is not initialized yet. Please try again in a moment.",
-      })
-      return
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: "IPFS is not initialized yet. Please try again in a moment.",
+        })
+        return;
     }
 
-    setIsLoading(true)
+    setIsLoading(true);
     try {
-      console.log('Starting persona creation process...')
-      console.log('Step 1: Preparing persona data for IPFS')
-      
-      // Format traits into array
-      const traitArray = traits.split(',').map(t => t.trim()).filter(t => t)
-      
-      // Create initial state message
-      const message = {
-        text: backstory,
-        timestamp: new Date().toISOString(),
-        persona: name,
-        traits: traitArray
-      }
+        console.log('Starting persona creation process...');
+        
+        // Generate avatar first
+        const { generateAvatar } = usePersonaAvatar();
+        const avatarBase64 = await generateAvatar(name, backstory);
+        let avatarCid = null;
 
-      console.log('Uploading initial state to IPFS:', message)
-      const initialStateCid = await uploadContent(message)
-      console.log('Initial state uploaded to IPFS with CID:', initialStateCid)
+        if (avatarBase64) {
+            // Store avatar in IPFS
+            const avatarData = {
+                imageData: avatarBase64,
+                metadata: {
+                    version: 1,
+                    personaName: name,
+                    timestamp: new Date().toISOString()
+                }
+            };
+            avatarCid = await pinataService.uploadJSON(avatarData);
+            console.log('Avatar stored in IPFS with CID:', avatarCid);
+        }
 
-      console.log('Step 2: Creating persona account and deploying contract')
-      const result = await wireService.addPersona(
-        name.toLowerCase(),
-        backstory,
-        initialStateCid
-      )
-      
-      console.log('Persona creation complete:', {
-        name: name.toLowerCase(),
-        initialStateCid,
-        deployResult: result.deployResult,
-        initResponse: result.initResponse
-      })
+        // Format traits into array
+        const traitArray = traits.split(',').map(t => t.trim()).filter(t => t);
+        
+        // Create initial state message with avatar CID
+        const message = {
+            text: backstory,
+            timestamp: new Date().toISOString(),
+            persona: name,
+            traits: traitArray,
+            avatar_cid: avatarCid // Store the avatar CID in the initial state
+        };
 
-      toast({
-        title: "Success",
-        description: "Persona created successfully!",
-      })
+        console.log('Uploading initial state to IPFS:', message);
+        const initialStateCid = await uploadContent(message);
+        console.log('Initial state uploaded to IPFS with CID:', initialStateCid);
 
-      // Call the callback to refresh the personas list
-      onPersonaAdded?.();
-      
-      setOpen(false)
-      setName("")
-      setBackstory("")
-      setTraits("")
+        console.log('Creating persona account and deploying contract');
+        const result = await wireService.addPersona(
+            name.toLowerCase(),
+            backstory,
+            initialStateCid
+        );
+        
+        console.log('Persona creation complete:', {
+            name: name.toLowerCase(),
+            initialStateCid,
+            deployResult: result.deployResult,
+            initResponse: result.initResponse
+        });
+
+        toast({
+            title: "Success",
+            description: "Persona created successfully!",
+        });
+
+        onPersonaAdded?.();
+        setOpen(false);
+        setName("");
+        setBackstory("");
+        setTraits("");
     } catch (error: any) {
-      console.error('Error creating persona:', error)
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: error.message || "Failed to create persona",
-      })
+        console.error('Error creating persona:', error);
+        toast({
+            variant: "destructive",
+            title: "Error",
+            description: error.message || "Failed to create persona",
+        });
     } finally {
-      setIsLoading(false)
+        setIsLoading(false);
     }
-  }
+};
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
