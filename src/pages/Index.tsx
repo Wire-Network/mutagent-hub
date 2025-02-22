@@ -21,7 +21,7 @@ const Index = () => {
   const navigate = useNavigate();
   const { getPersonas, getPersonaInfo, loading: wireLoading, error: wireError } = useWire();
   const { isReady, getContent } = usePersonaContent();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, logout } = useAuth();
   const { generateAvatar, isGenerating } = usePersonaAvatar();
   const [personaAvatars, setPersonaAvatars] = useState<Map<string, string>>(new Map());
   const queryClient = useQueryClient();
@@ -179,8 +179,18 @@ const Index = () => {
                 </div>
               </div>
               
-              <div className="mt-auto">
+              <div className="mt-auto space-y-4">
                 <AddPersonaDialog onPersonaAdded={refreshPersonas} />
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => {
+                    logout();
+                    navigate('/login');
+                  }}
+                >
+                  Sign Out
+                </Button>
               </div>
             </div>
           )}
