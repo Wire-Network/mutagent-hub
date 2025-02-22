@@ -1,7 +1,6 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AddPersonaDialog } from "@/components/AddPersonaDialog";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
@@ -22,6 +21,45 @@ const Index = () => {
   const { generateAvatar, isGenerating } = usePersonaAvatar();
   const [personaAvatars, setPersonaAvatars] = useState<Map<string, string>>(new Map());
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    // Add tilt effect to cards
+    const cards = document.querySelectorAll('.persona-card');
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      const card = e.currentTarget as HTMLElement;
+      const rect = card.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+
+      const rotateX = (y - centerY) / 20;
+      const rotateY = -(x - centerX) / 20;
+
+      card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+      card.style.transition = 'transform 0.1s ease';
+    };
+
+    const handleMouseLeave = (e: MouseEvent) => {
+      const card = e.currentTarget as HTMLElement;
+      card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+      card.style.transition = 'transform 0.3s ease';
+    };
+
+    cards.forEach(card => {
+      card.addEventListener('mousemove', handleMouseMove);
+      card.addEventListener('mouseleave', handleMouseLeave);
+    });
+
+    return () => {
+      cards.forEach(card => {
+        card.removeEventListener('mousemove', handleMouseMove);
+        card.removeEventListener('mouseleave', handleMouseLeave);
+      });
+    };
+  }, [personas]); // Re-run when personas change
 
   // Redirect to login if not authenticated
   if (!isAuthenticated) {
@@ -95,14 +133,13 @@ const Index = () => {
       return enrichedPersonas;
     },
     enabled: isReady,
-    staleTime: Infinity, // Never mark the data as stale automatically
-    gcTime: 24 * 60 * 60 * 1000, // Keep unused data in cache for 24 hours
+    staleTime: Infinity,
+    gcTime: 24 * 60 * 60 * 1000,
     refetchOnWindowFocus: false,
     refetchOnMount: false,
     refetchOnReconnect: false
   });
 
-  // Function to manually invalidate the personas query
   const refreshPersonas = () => {
     queryClient.invalidateQueries({ queryKey: ['personas'] });
   };
@@ -166,7 +203,7 @@ const Index = () => {
           {filteredPersonas.map((persona) => (
             <div
               key={persona.name}
-              className="bg-card rounded-lg p-6 shadow-lg hover:shadow-xl transition-shadow"
+              className="persona-card bg-card rounded-lg p-6 shadow-lg transition-all duration-300"
             >
               <img
                 src={persona.imageUrl}
