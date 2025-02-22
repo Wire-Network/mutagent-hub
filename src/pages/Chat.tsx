@@ -1,6 +1,7 @@
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState, useEffect, useRef, useCallback } from "react";
-import { useParams } from "react-router-dom";
+import { useParams, useNavigate } from "react-router-dom";
 import { useWire, Message } from "@/hooks/useWire";
 import { useToast } from "@/components/ui/use-toast";
 import { useIpfs } from "@/hooks/useIpfs";
@@ -8,6 +9,8 @@ import { MessageInput } from "@/components/MessageInput";
 import { ChatMessage } from "@/components/ChatMessage";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/contexts/AuthContext";
+import { Button } from "@/components/ui/button";
+import { ArrowLeft } from "lucide-react";
 import config from '@/config';
 import { WireService } from "@/services/wire-service";
 
@@ -58,6 +61,7 @@ const Chat = () => {
     const { uploadMessage, fetchMessage } = useIpfs();
     const wireService = WireService.getInstance();
     const { accountName } = useAuth();
+    const navigate = useNavigate();
     
     const [messages, setMessages] = useState<ExtendedMessage[]>([]);
     const [submitting, setSubmitting] = useState(false);
@@ -263,10 +267,20 @@ const Chat = () => {
             <div className="flex-1 p-4 overflow-hidden">
                 <div className="max-w-4xl mx-auto bg-card rounded-lg shadow-lg h-full flex flex-col">
                     <div className="p-4 border-b">
-                        <h1 className="text-2xl font-bold capitalize flex items-center gap-2">
-                            <span className="h-3 w-3 rounded-full bg-green-500 animate-pulse"></span>
-                            Chat with {personaName}
-                        </h1>
+                        <div className="flex items-center gap-4">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => navigate('/')}
+                                className="hover:bg-accent"
+                            >
+                                <ArrowLeft className="h-5 w-5" />
+                            </Button>
+                            <h1 className="text-2xl font-bold capitalize flex items-center gap-2">
+                                <span className="h-3 w-3 rounded-full bg-green-500 animate-pulse"></span>
+                                Chat with {personaName}
+                            </h1>
+                        </div>
                     </div>
                     
                     <ScrollArea className="flex-1 p-4">
