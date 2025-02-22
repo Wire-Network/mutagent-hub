@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import {
     Dialog,
@@ -11,6 +10,7 @@ import { usePersonaContent } from "@/hooks/usePersonaContent";
 import { useWire } from "@/hooks/useWire";
 import { usePersonaAvatar } from "@/hooks/usePersonaAvatar";
 import { PersonaState } from "@/types/persona";
+import { PinataService } from "@/services/pinata-service";
 
 interface PersonaDialogProps {
     open: boolean;
@@ -24,6 +24,7 @@ export function PersonaDialog({ open, onOpenChange, personaName }: PersonaDialog
     const { generateAvatar } = usePersonaAvatar();
     const [personaData, setPersonaData] = useState<PersonaState | null>(null);
     const [avatarUrl, setAvatarUrl] = useState<string>("/placeholder.svg");
+    const pinataService = PinataService.getInstance();
 
     useEffect(() => {
         const loadPersonaData = async () => {
@@ -39,17 +40,28 @@ export function PersonaDialog({ open, onOpenChange, personaName }: PersonaDialog
                 const stateData = await getContent(personaInfo.initial_state_cid) as PersonaState;
                 setPersonaData(stateData);
 
-                const avatarBase64 = await generateAvatar(personaName, stateData.data.text);
-                if (avatarBase64) {
-                    setAvatarUrl(`data:image/png;base64,${avatarBase64}`);
+                // If we have a stored avatar CID, use it
+                if (stateData.data.avatar_cid) {
+                    try {
+                        const avatarData = await pinataService.getContent(stateData.data.avatar_cid);
+                        if (avatarData?.imageData) {
+                            setAvatarUrl(`data:image/png;base64,${avatarData.imageData}`);
+                            return;
+                        }
+                    } catch (error) {
+                        console.error('Error fetching avatar:', error);
+                    }
                 }
+
+                // Fallback to placeholder if no avatar is found
+                setAvatarUrl("/placeholder.svg");
             } catch (error) {
                 console.error('Error loading persona data:', error);
             }
         };
 
         loadPersonaData();
-    }, [personaName, open, isReady, getPersonaInfo, getContent, generateAvatar]);
+    }, [personaName, open, isReady, getPersonaInfo, getContent]);
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
