@@ -153,7 +153,7 @@ export class MetaMaskService {
             // Format public key for WIRE
             const formattedPubKey = `PUB_EM_${publicKey.slice(2)}`;
 
-            // Register account on WIRE with sysio authority using demoPrivateKey
+            // Register account on WIRE with sysio authority
             await this.wireService.pushTransaction(
                 {
                     account: 'sysio',
@@ -161,12 +161,29 @@ export class MetaMaskService {
                     authorization: [{ actor: 'sysio', permission: 'active' }],
                     data: {
                         creator: 'sysio',
-                        account_name: wireName,
-                        public_key: formattedPubKey,
+                        name: wireName,
+                        owner: {
+                            threshold: 1,
+                            keys: [{
+                                key: formattedPubKey,
+                                weight: 1
+                            }],
+                            accounts: [],
+                            waits: []
+                        },
+                        active: {
+                            threshold: 1,
+                            keys: [{
+                                key: formattedPubKey,
+                                weight: 1
+                            }],
+                            accounts: [],
+                            waits: []
+                        },
                         address: address
                     }
                 },
-                config.wire.demoPrivateKey // Pass the demoPrivateKey for sysio authority
+                config.wire.demoPrivateKey
             );
         } catch (error) {
             console.error('Error creating new account:', error);
