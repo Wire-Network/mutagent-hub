@@ -18,7 +18,7 @@ import { WireService } from "@/services/wire-service"
 import config from "@/config"
 import { useQueryClient } from '@tanstack/react-query'
 
-export function AddPersonaDialog() {
+export function AddPersonaDialog({ onPersonaAdded }: { onPersonaAdded?: () => void }) {
   const [open, setOpen] = useState(false)
   const [name, setName] = useState("")
   const [nameError, setNameError] = useState("")
@@ -233,8 +233,8 @@ Remember:
         description: "Persona created successfully!",
       })
 
-      // Invalidate and refetch personas query
-      await queryClient.invalidateQueries({ queryKey: ['personas'] })
+      // Call the callback to refresh the personas list
+      onPersonaAdded?.();
       
       setOpen(false)
       setName("")
