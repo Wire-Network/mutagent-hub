@@ -115,16 +115,16 @@ const Index = () => {
   );
 
   return (
-    <>
+    <div className="relative min-h-screen">
       <AnimatedBackground />
-      <div className="container mx-auto px-4 py-8 relative">
+      <div className="relative z-10 container mx-auto px-4 py-8">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
           className="flex justify-between items-center mb-8"
         >
-          <h1 className="text-4xl font-bold">Choose Your Chat Companion</h1>
+          <h1 className="text-4xl font-bold text-foreground">Choose Your Chat Companion</h1>
           <AddPersonaDialog onPersonaAdded={refreshPersonas} />
         </motion.div>
         
@@ -171,7 +171,7 @@ const Index = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
-            className="text-center text-muted-foreground"
+            className="text-center text-foreground"
           >
             No personas available. Create one to get started!
           </motion.div>
@@ -196,7 +196,7 @@ const Index = () => {
                   alt={persona.name}
                   className="w-32 h-32 mx-auto mb-4 rounded-full object-cover"
                 />
-                <h2 className="text-2xl font-bold mb-2 capitalize">{persona.name}</h2>
+                <h2 className="text-2xl font-bold mb-2 capitalize text-foreground">{persona.name}</h2>
                 <p className="text-muted-foreground mb-4 line-clamp-3">
                   {persona.backstory}
                 </p>
@@ -223,7 +223,7 @@ const Index = () => {
           </motion.div>
         )}
       </div>
-    </>
+    </div>
   );
 };
 
