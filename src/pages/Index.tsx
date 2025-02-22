@@ -104,7 +104,6 @@ const Index = () => {
   });
 
   useEffect(() => {
-    // Add tilt effect to cards
     const cards = document.querySelectorAll('.persona-card');
     
     const handleMouseMove = (e: MouseEvent) => {
@@ -140,7 +139,7 @@ const Index = () => {
         card.removeEventListener('mouseleave', handleMouseLeave);
       });
     };
-  }, [personas]); // Now personas is defined before being used in the dependency array
+  }, [personas]);
 
   const refreshPersonas = () => {
     queryClient.invalidateQueries({ queryKey: ['personas'] });
@@ -162,17 +161,17 @@ const Index = () => {
         "fixed left-0 top-0 h-full bg-secondary/30 backdrop-blur-md transition-all duration-300 z-20",
         isSidebarOpen ? "w-64 border-r border-primary/20" : "w-16"
       )}>
-        <div className="p-4 flex flex-col h-full">
+        <div className="flex flex-col h-full">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="w-8 h-8 mb-8"
+            className="w-8 h-8 m-8"
           >
             <Menu className="h-4 w-4" />
           </Button>
           {isSidebarOpen && (
-            <>
+            <div className="px-4 flex flex-col h-full">
               <div className="space-y-4 flex-1">
                 <div>
                   <h2 className="text-xl font-bold text-primary font-heading">Mutagent</h2>
@@ -200,7 +199,7 @@ const Index = () => {
                   Sign Out
                 </Button>
               </div>
-            </>
+            </div>
           )}
         </div>
       </div>
