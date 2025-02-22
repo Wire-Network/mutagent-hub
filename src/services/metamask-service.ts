@@ -1,6 +1,7 @@
 
 import { ethers } from 'ethers';
 import { WireService } from './wire-service';
+import config from '../config';
 
 export class MetaMaskService {
     private static instance: MetaMaskService;
@@ -152,17 +153,20 @@ export class MetaMaskService {
             // Format public key for WIRE
             const formattedPubKey = `PUB_EM_${publicKey.slice(2)}`;
 
-            // Register account on WIRE with sysio authority
-            await this.wireService.pushTransaction({
-                account: 'sysio',
-                name: 'newaccount',
-                authorization: [{ actor: 'sysio', permission: 'active' }],
-                data: {
-                    account_name: wireName,
-                    public_key: formattedPubKey,
-                    address: address
-                }
-            });
+            // Register account on WIRE with sysio authority using demoPrivateKey
+            await this.wireService.pushTransaction(
+                {
+                    account: 'sysio',
+                    name: 'newaccount',
+                    authorization: [{ actor: 'sysio', permission: 'active' }],
+                    data: {
+                        account_name: wireName,
+                        public_key: formattedPubKey,
+                        address: address
+                    }
+                },
+                config.wire.demoPrivateKey // Pass the demoPrivateKey for sysio authority
+            );
         } catch (error) {
             console.error('Error creating new account:', error);
             throw error;
