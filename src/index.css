@@ -1,4 +1,5 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;700&display=swap');
+
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -6,51 +7,84 @@
 
 @layer base {
   :root {
-    --background: 240 10% 3.9%;
+    --background: 288 91% 7%;
     --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
+    --card: 288 91% 7%;
     --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
+    --popover: 288 91% 7%;
     --popover-foreground: 0 0% 98%;
-    --primary: 240 5.9% 10%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
+    --primary: 108 100% 50%;
+    --primary-foreground: 288 91% 7%;
+    --secondary: 288 91% 7%;
+    --secondary-foreground: 108 100% 50%;
+    --muted: 0 1% 42%;
+    --muted-foreground: 0 0% 100%;
+    --accent: 108 100% 50%;
+    --accent-foreground: 288 91% 7%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 240 4.9% 83.9%;
+    --border: 288 91% 7%;
+    --input: 288 91% 7%;
+    --ring: 108 100% 50%;
     --radius: 0.5rem;
   }
 
   * {
-    @apply border-border;
+    @apply border-border selection:bg-primary/20 selection:text-primary;
   }
 
   body {
-    @apply bg-background text-foreground font-sans;
+    @apply bg-background text-foreground font-sans antialiased overflow-x-hidden;
+    background-image: radial-gradient(circle at center, rgba(120, 255, 0, 0.15) 0%, rgba(33, 2, 35, 0) 70%);
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-heading;
+    @apply font-heading tracking-wider;
+  }
+}
+
+@layer components {
+  .glass-panel {
+    @apply bg-secondary/30 backdrop-blur-md border border-muted/20 shadow-lg;
+  }
+
+  .neon-border {
+    @apply border border-primary shadow-neon-sm hover:shadow-neon transition-shadow duration-300;
+  }
+
+  .cyber-button {
+    @apply relative inline-flex items-center justify-center px-6 py-2 overflow-hidden font-heading 
+           text-primary bg-secondary/50 rounded-md group hover:shadow-neon transition-all duration-300
+           border border-primary/50 hover:border-primary;
+  }
+
+  .cyber-button::before {
+    @apply content-[''] absolute bg-primary/10 top-0 left-0 w-full h-full -translate-x-full
+           skew-x-12 transition-transform duration-300 ease-out group-hover:translate-x-0;
+  }
+
+  .persona-card {
+    @apply glass-panel rounded-lg p-6 transition-all duration-300
+           hover:scale-[1.02] hover:shadow-neon-sm;
+  }
+
+  .input-cyber {
+    @apply bg-secondary/30 border border-muted/30 rounded-md px-4 py-2
+           focus:border-primary focus:ring-1 focus:ring-primary/50 
+           placeholder:text-muted-foreground/50 transition-all duration-300;
   }
 }
 
 .message-bubble {
-  @apply rounded-lg p-4 max-w-[80%] break-words;
+  @apply rounded-lg p-4 max-w-[80%] break-words glass-panel;
 }
 
 .user-message {
-  @apply bg-primary text-primary-foreground ml-auto;
+  @apply bg-primary/10 border border-primary/30 text-foreground ml-auto;
 }
 
 .npc-message {
-  @apply bg-muted text-muted-foreground mr-auto;
+  @apply bg-secondary/30 border border-muted/30 text-muted-foreground mr-auto;
 }
 
 .chat-container {
@@ -58,5 +92,5 @@
 }
 
 .persona-panel {
-  @apply bg-card text-card-foreground p-6 rounded-lg shadow-lg;
+  @apply persona-card;
 }
