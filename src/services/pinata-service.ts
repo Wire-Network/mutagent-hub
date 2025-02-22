@@ -1,3 +1,4 @@
+
 import { PinataSDK } from 'pinata-web3';
 import config from '@/config';
 
@@ -25,11 +26,11 @@ export class PinataService {
         return PinataService.instance;
     }
 
-    async uploadJSON(content: any): Promise<string> {
+    async uploadJSON(content: any, customKey?: string): Promise<string> {
         try {
             // Convert content to File object
             const blob = new Blob([JSON.stringify(content)], { type: 'application/json' });
-            const file = new File([blob], 'content.json', { type: 'application/json' });
+            const file = new File([blob], customKey || 'content.json', { type: 'application/json' });
 
             const result = await this.pinata.upload.file(file);
             console.log('Content uploaded to Pinata:', result);
