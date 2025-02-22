@@ -22,50 +22,6 @@ const Index = () => {
   const [personaAvatars, setPersonaAvatars] = useState<Map<string, string>>(new Map());
   const queryClient = useQueryClient();
 
-  useEffect(() => {
-    // Add tilt effect to cards
-    const cards = document.querySelectorAll('.persona-card');
-    
-    const handleMouseMove = (e: MouseEvent) => {
-      const card = e.currentTarget as HTMLElement;
-      const rect = card.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
-
-      const centerX = rect.width / 2;
-      const centerY = rect.height / 2;
-
-      const rotateX = (y - centerY) / 20;
-      const rotateY = -(x - centerX) / 20;
-
-      card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
-      card.style.transition = 'transform 0.1s ease';
-    };
-
-    const handleMouseLeave = (e: MouseEvent) => {
-      const card = e.currentTarget as HTMLElement;
-      card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
-      card.style.transition = 'transform 0.3s ease';
-    };
-
-    cards.forEach(card => {
-      card.addEventListener('mousemove', handleMouseMove);
-      card.addEventListener('mouseleave', handleMouseLeave);
-    });
-
-    return () => {
-      cards.forEach(card => {
-        card.removeEventListener('mousemove', handleMouseMove);
-        card.removeEventListener('mouseleave', handleMouseLeave);
-      });
-    };
-  }, [personas]); // Re-run when personas change
-
-  // Redirect to login if not authenticated
-  if (!isAuthenticated) {
-    return <Navigate to="/login" />;
-  }
-
   const { data: personas = [], isLoading, error: queryError } = useQuery({
     queryKey: ['personas'],
     queryFn: async () => {
@@ -140,6 +96,45 @@ const Index = () => {
     refetchOnReconnect: false
   });
 
+  useEffect(() => {
+    // Add tilt effect to cards
+    const cards = document.querySelectorAll('.persona-card');
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      const card = e.currentTarget as HTMLElement;
+      const rect = card.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+
+      const rotateX = (y - centerY) / 20;
+      const rotateY = -(x - centerX) / 20;
+
+      card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+      card.style.transition = 'transform 0.1s ease';
+    };
+
+    const handleMouseLeave = (e: MouseEvent) => {
+      const card = e.currentTarget as HTMLElement;
+      card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+      card.style.transition = 'transform 0.3s ease';
+    };
+
+    cards.forEach(card => {
+      card.addEventListener('mousemove', handleMouseMove);
+      card.addEventListener('mouseleave', handleMouseLeave);
+    });
+
+    return () => {
+      cards.forEach(card => {
+        card.removeEventListener('mousemove', handleMouseMove);
+        card.removeEventListener('mouseleave', handleMouseLeave);
+      });
+    };
+  }, [personas]); // Now personas is defined before being used in the dependency array
+
   const refreshPersonas = () => {
     queryClient.invalidateQueries({ queryKey: ['personas'] });
   };
@@ -148,6 +143,11 @@ const Index = () => {
     persona.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     persona.traits.some(trait => trait.toLowerCase().includes(searchQuery.toLowerCase()))
   );
+
+  // Redirect to login if not authenticated
+  if (!isAuthenticated) {
+    return <Navigate to="/login" />;
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -241,4 +241,3 @@ const Index = () => {
 };
 
 export default Index;
-
