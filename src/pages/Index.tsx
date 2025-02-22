@@ -175,9 +175,9 @@ const Index = () => {
           )}>
             <div className="space-y-4 flex-1">
               <div>
-                <h2 className="text-xl font-bold text-primary font-heading whitespace-nowrap overflow-hidden">Mutagent</h2>
+                <h2 className="text-xl font-bold text-primary font-heading">Mutagent</h2>
                 <div className="border-t border-primary/20 mt-4 pt-4">
-                  <p className="text-sm text-muted-foreground whitespace-nowrap overflow-hidden">
+                  <p className="text-sm text-muted-foreground">
                     Choose your companion and start chatting with unique AI personas.
                   </p>
                 </div>
@@ -191,7 +191,7 @@ const Index = () => {
             <div className="mt-4 pt-4 border-t border-primary/20">
               <Button 
                 variant="outline" 
-                className="w-full whitespace-nowrap"
+                className="w-full"
                 onClick={() => {
                   logout();
                   navigate('/login');
