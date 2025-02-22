@@ -46,7 +46,7 @@ export const useChat = (personaName: string, accountName: string) => {
                     )
                 );
                 pendingMessageRef.current = null;
-                setSubmitting(false); // Release the submitting state only after we get the response
+                setSubmitting(false);
                 if (pollingTimeoutRef.current) {
                     clearTimeout(pollingTimeoutRef.current);
                     pollingTimeoutRef.current = undefined;
@@ -57,7 +57,7 @@ export const useChat = (personaName: string, accountName: string) => {
         } catch (error) {
             console.error('Error checking message status:', error);
             pendingMessageRef.current = null;
-            setSubmitting(false); // Release the submitting state in case of error
+            setSubmitting(false);
             if (pollingTimeoutRef.current) {
                 clearTimeout(pollingTimeoutRef.current);
                 pollingTimeoutRef.current = undefined;
@@ -66,14 +66,18 @@ export const useChat = (personaName: string, accountName: string) => {
     }, [personaName, accountName]);
 
     const handleSendMessage = async (messageText: string) => {
-        if (!personaName || !accountName || submitting) return;
+        // Prevent sending if already submitting or missing required data
+        if (!personaName || !accountName || submitting || pendingMessageRef.current) {
+            return;
+        }
 
-        setSubmitting(true); // Set submitting state at the start
+        setSubmitting(true);
+        
+        // Clear any existing polling
         if (pollingTimeoutRef.current) {
             clearTimeout(pollingTimeoutRef.current);
             pollingTimeoutRef.current = undefined;
         }
-        pendingMessageRef.current = null;
 
         try {
             const persona = await wireService.getPersona(personaName);
@@ -131,7 +135,7 @@ export const useChat = (personaName: string, accountName: string) => {
             }
             setMessages(prev => prev.filter(msg => msg.messageText !== messageText));
             pendingMessageRef.current = null;
-            setSubmitting(false); // Release the submitting state in case of error
+            setSubmitting(false);
         }
     };
 

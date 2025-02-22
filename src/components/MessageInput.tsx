@@ -21,17 +21,23 @@ export const MessageInput = ({ onSendMessage, isLoading }: MessageInputProps) =>
   };
 
   const placeholderText = isLoading 
-    ? "Please wait for the previous response..."
+    ? "Waiting for response..."
     : "Type your message...";
 
   return (
-    <form onSubmit={handleSubmit} className="flex gap-2">
+    <form onSubmit={handleSubmit} className="flex gap-2" onKeyDown={(e) => {
+      // Prevent Enter key from submitting when loading
+      if (e.key === 'Enter' && isLoading) {
+        e.preventDefault();
+      }
+    }}>
       <Input
         value={message}
         onChange={(e) => setMessage(e.target.value)}
         placeholder={placeholderText}
         disabled={isLoading}
         className="flex-1"
+        aria-label={isLoading ? "Cannot send message while waiting for response" : "Type your message"}
       />
       <Button 
         type="submit" 
