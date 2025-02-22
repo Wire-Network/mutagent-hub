@@ -1,13 +1,13 @@
-
 import { ethers } from 'ethers';
 import { WireService } from './wire-service';
 import config from '../config';
-import { PermissionLevel, Name } from '@wireio/core';
+import { PermissionLevel, Name, KeyType, Bytes, PublicKey } from '@wireio/core';
 
 export class MetaMaskService {
     private static instance: MetaMaskService;
     private provider: ethers.BrowserProvider | null = null;
     private wireService: WireService;
+    private readonly curve = getCurve(KeyType.EM);
 
     private constructor() {
         this.wireService = WireService.getInstance();
@@ -107,6 +107,19 @@ export class MetaMaskService {
         }
     }
 
+    private ethPubKeyToWirePubKey(ethPubKey: string, keyType = KeyType.EM): string {
+        if (ethPubKey.startsWith('0x')) {
+            ethPubKey = ethPubKey.slice(2);
+        }
+        const keypair = this.curve.keyFromPublic(ethPubKey, 'hex');
+        const x = keypair.getPublic().getX().toArray('be', 32);
+        const y = keypair.getPublic().getY().toArray('be', 32);
+        const keyData = new Uint8Array([y[31] & 1 ? 3 : 2, ...x]);
+        const bytes = Bytes.from(keyData);
+        const publicKey = new PublicKey(keyType, bytes);
+        return publicKey.toString();
+    }
+
     async checkAndCreateAccount(address: string): Promise<string> {
         try {
             const wireName = this.addressToWireName(address);
@@ -151,8 +164,8 @@ export class MetaMaskService {
             const msgHash = ethers.hashMessage(message);
             const publicKey = ethers.SigningKey.recoverPublicKey(msgHash, signature);
             
-            // Format public key for WIRE
-            const formattedPubKey = `PUB_EM_${publicKey.slice(2)}`;
+            // Convert Ethereum public key to WIRE format
+            const formattedPubKey = this.ethPubKeyToWirePubKey(publicKey);
 
             // Prepare sysio authorization
             const sysioAuth = [
