@@ -1,10 +1,10 @@
-import { useState, useRef } from "react";
+
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { AddPersonaDialog } from "@/components/AddPersonaDialog";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { usePersonaContent } from "@/hooks/usePersonaContent";
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate } from "react-router-dom";
@@ -21,6 +21,7 @@ const Index = () => {
   const { isAuthenticated } = useAuth();
   const { generateAvatar, isGenerating } = usePersonaAvatar();
   const [personaAvatars, setPersonaAvatars] = useState<Map<string, string>>(new Map());
+  const queryClient = useQueryClient();
 
   // Redirect to login if not authenticated
   if (!isAuthenticated) {
@@ -94,11 +95,17 @@ const Index = () => {
       return enrichedPersonas;
     },
     enabled: isReady,
-    staleTime: 1000 * 30, // Data remains fresh for 30 seconds
-    gcTime: 1000 * 60 * 5, // Keep unused data in cache for 5 minutes
+    staleTime: Infinity, // Never mark the data as stale automatically
+    gcTime: 24 * 60 * 60 * 1000, // Keep unused data in cache for 24 hours
     refetchOnWindowFocus: false,
-    refetchInterval: undefined
+    refetchOnMount: false,
+    refetchOnReconnect: false
   });
+
+  // Function to manually invalidate the personas query
+  const refreshPersonas = () => {
+    queryClient.invalidateQueries({ queryKey: ['personas'] });
+  };
 
   const filteredPersonas = personas.filter(persona =>
     persona.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -109,7 +116,7 @@ const Index = () => {
     <div className="container mx-auto px-4 py-8">
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-4xl font-bold">Choose Your Chat Companion</h1>
-        <AddPersonaDialog />
+        <AddPersonaDialog onPersonaAdded={refreshPersonas} />
       </div>
       
       {queryError && (
@@ -197,3 +204,4 @@ const Index = () => {
 };
 
 export default Index;
+
