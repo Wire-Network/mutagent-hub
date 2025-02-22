@@ -1,6 +1,8 @@
+
 export interface PersonaInfo {
     persona_name: string;
     initial_state_cid: string;
+    avatar_cid?: string;
 }
 
 export interface PersonaData {
@@ -22,6 +24,7 @@ export interface PersonaState {
         traits: string[];
         user?: string;
         history?: boolean;
+        avatar_cid?: string;
     };
     contentType: string;
 }
