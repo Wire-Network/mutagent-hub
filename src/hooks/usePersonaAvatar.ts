@@ -3,9 +3,8 @@ import { useState, useCallback } from 'react';
 import config from '@/config';
 import { PinataService } from '@/services/pinata-service';
 
-// Cache in memory during session
+// Cache only the image data for performance
 const AVATAR_CACHE = new Map<string, string>();
-const AVATAR_CID_CACHE = new Map<string, string>();
 
 interface GenerateAvatarOptions {
     model: string;
@@ -29,27 +28,12 @@ export function usePersonaAvatar() {
     const pinataService = PinataService.getInstance();
 
     const generateAvatar = useCallback(async (personaName: string, backstory: string) => {
-        // Check memory cache first
+        // Check memory cache only for the image data
         if (AVATAR_CACHE.has(personaName)) {
             return AVATAR_CACHE.get(personaName);
         }
 
         try {
-            // Try to fetch existing avatar from IPFS first
-            if (AVATAR_CID_CACHE.has(personaName)) {
-                const cid = AVATAR_CID_CACHE.get(personaName)!;
-                try {
-                    const existingAvatar = await pinataService.getContent(cid);
-                    if (existingAvatar?.imageData) {
-                        console.log('Found existing avatar in IPFS with CID:', cid);
-                        AVATAR_CACHE.set(personaName, existingAvatar.imageData);
-                        return existingAvatar.imageData;
-                    }
-                } catch (error) {
-                    console.log('Failed to fetch existing avatar, generating new one...');
-                }
-            }
-
             setIsGenerating(true);
             setError(null);
 
@@ -96,11 +80,13 @@ export function usePersonaAvatar() {
             const cid = await pinataService.uploadJSON(avatarData);
             console.log('Stored new avatar in IPFS with CID:', cid);
 
-            // Cache both the CID and the image data
-            AVATAR_CID_CACHE.set(personaName, cid);
+            // Only cache the image data for performance
             AVATAR_CACHE.set(personaName, imageBase64);
 
-            return imageBase64;
+            return {
+                imageBase64,
+                cid // Return the CID so it can be stored in the blockchain
+            };
         } catch (err: any) {
             console.error('Error generating/storing avatar:', err);
             setError(err.message || 'Failed to generate avatar');
