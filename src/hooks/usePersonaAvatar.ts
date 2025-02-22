@@ -1,6 +1,9 @@
+
 import { useState, useCallback } from 'react';
 import config from '@/config';
+import { PinataService } from '@/services/pinata-service';
 
+// Cache in memory during session
 const AVATAR_CACHE = new Map<string, string>();
 
 interface GenerateAvatarOptions {
@@ -13,20 +16,40 @@ interface GenerateAvatarOptions {
     style_preset: string;
 }
 
+interface AvatarMetadata {
+    version: number;
+    personaName: string;
+    timestamp: string;
+}
+
 export function usePersonaAvatar() {
     const [isGenerating, setIsGenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const pinataService = PinataService.getInstance();
 
     const generateAvatar = useCallback(async (personaName: string, backstory: string) => {
-        // Check cache first
+        // Check memory cache first
         if (AVATAR_CACHE.has(personaName)) {
             return AVATAR_CACHE.get(personaName);
         }
 
-        setIsGenerating(true);
-        setError(null);
-
         try {
+            // Try to fetch existing avatar from IPFS first
+            const ipfsKey = `avatar-${personaName}`;
+            try {
+                const existingAvatar = await pinataService.getContent(ipfsKey);
+                if (existingAvatar?.imageData) {
+                    console.log('Found existing avatar in IPFS:', ipfsKey);
+                    AVATAR_CACHE.set(personaName, existingAvatar.imageData);
+                    return existingAvatar.imageData;
+                }
+            } catch (error) {
+                console.log('No existing avatar found in IPFS, generating new one...');
+            }
+
+            setIsGenerating(true);
+            setError(null);
+
             // Create a prompt based on the persona's backstory
             const prompt = `Create a high-quality profile avatar for a character named ${personaName}. ${backstory}. The image should be a portrait style, focusing on the character's face and upper body, with a professional and polished look.`;
 
@@ -56,12 +79,26 @@ export function usePersonaAvatar() {
             const data = await response.json();
             const imageBase64 = data.images[0];
 
-            // Cache the result
+            // Store in IPFS
+            const avatarData = {
+                imageData: imageBase64,
+                metadata: {
+                    version: 1,
+                    personaName,
+                    timestamp: new Date().toISOString()
+                } as AvatarMetadata
+            };
+
+            // Upload to IPFS with the predictable key
+            await pinataService.uploadJSON(avatarData, ipfsKey);
+            console.log('Stored new avatar in IPFS:', ipfsKey);
+
+            // Cache in memory
             AVATAR_CACHE.set(personaName, imageBase64);
 
             return imageBase64;
         } catch (err: any) {
-            console.error('Error generating avatar:', err);
+            console.error('Error generating/storing avatar:', err);
             setError(err.message || 'Failed to generate avatar');
             return null;
         } finally {
@@ -74,4 +111,4 @@ export function usePersonaAvatar() {
         isGenerating,
         error
     };
-} 
+}
