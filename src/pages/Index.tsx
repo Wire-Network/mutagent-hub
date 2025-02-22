@@ -169,18 +169,23 @@ const Index = () => {
             <Menu className="h-4 w-4" />
           </Button>
           {isSidebarOpen && (
-            <div className="space-y-4 flex-1 flex flex-col">
-              <div>
-                <h2 className="text-xl font-bold text-primary font-heading">Mutagent</h2>
-                <div className="border-t border-primary/20 mt-4 pt-4">
-                  <p className="text-sm text-muted-foreground">
-                    Choose your companion and start chatting with unique AI personas.
-                  </p>
+            <>
+              <div className="space-y-4 flex-1">
+                <div>
+                  <h2 className="text-xl font-bold text-primary font-heading">Mutagent</h2>
+                  <div className="border-t border-primary/20 mt-4 pt-4">
+                    <p className="text-sm text-muted-foreground">
+                      Choose your companion and start chatting with unique AI personas.
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="mt-auto">
+                  <AddPersonaDialog onPersonaAdded={refreshPersonas} />
                 </div>
               </div>
-              
-              <div className="mt-auto space-y-4">
-                <AddPersonaDialog onPersonaAdded={refreshPersonas} />
+
+              <div className="mt-4 pt-4 border-t border-primary/20">
                 <Button 
                   variant="outline" 
                   className="w-full"
@@ -192,7 +197,7 @@ const Index = () => {
                   Sign Out
                 </Button>
               </div>
-            </div>
+            </>
           )}
         </div>
       </div>
