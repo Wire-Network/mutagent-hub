@@ -46,6 +46,7 @@ export const useChat = (personaName: string, accountName: string) => {
                     )
                 );
                 pendingMessageRef.current = null;
+                setSubmitting(false); // Release the submitting state only after we get the response
                 if (pollingTimeoutRef.current) {
                     clearTimeout(pollingTimeoutRef.current);
                     pollingTimeoutRef.current = undefined;
@@ -56,6 +57,7 @@ export const useChat = (personaName: string, accountName: string) => {
         } catch (error) {
             console.error('Error checking message status:', error);
             pendingMessageRef.current = null;
+            setSubmitting(false); // Release the submitting state in case of error
             if (pollingTimeoutRef.current) {
                 clearTimeout(pollingTimeoutRef.current);
                 pollingTimeoutRef.current = undefined;
@@ -66,7 +68,7 @@ export const useChat = (personaName: string, accountName: string) => {
     const handleSendMessage = async (messageText: string) => {
         if (!personaName || !accountName || submitting) return;
 
-        setSubmitting(true);
+        setSubmitting(true); // Set submitting state at the start
         if (pollingTimeoutRef.current) {
             clearTimeout(pollingTimeoutRef.current);
             pollingTimeoutRef.current = undefined;
@@ -129,8 +131,7 @@ export const useChat = (personaName: string, accountName: string) => {
             }
             setMessages(prev => prev.filter(msg => msg.messageText !== messageText));
             pendingMessageRef.current = null;
-        } finally {
-            setSubmitting(false);
+            setSubmitting(false); // Release the submitting state in case of error
         }
     };
 
