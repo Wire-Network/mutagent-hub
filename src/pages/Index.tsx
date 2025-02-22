@@ -159,7 +159,7 @@ const Index = () => {
         "fixed left-0 top-0 h-full bg-secondary/30 backdrop-blur-md border-r border-primary/20 transition-all duration-300 z-20",
         isSidebarOpen ? "w-64" : "w-16"
       )}>
-        <div className="p-4">
+        <div className="p-4 flex flex-col h-full">
           <Button
             variant="ghost"
             size="icon"
@@ -169,12 +169,18 @@ const Index = () => {
             <Menu className="h-4 w-4" />
           </Button>
           {isSidebarOpen && (
-            <div className="space-y-4">
-              <h2 className="text-xl font-bold text-primary font-heading">Mutagent</h2>
-              <div className="border-t border-primary/20 pt-4">
-                <p className="text-sm text-muted-foreground">
-                  Choose your companion and start chatting with unique AI personas.
-                </p>
+            <div className="space-y-4 flex-1 flex flex-col">
+              <div>
+                <h2 className="text-xl font-bold text-primary font-heading">Mutagent</h2>
+                <div className="border-t border-primary/20 mt-4 pt-4">
+                  <p className="text-sm text-muted-foreground">
+                    Choose your companion and start chatting with unique AI personas.
+                  </p>
+                </div>
+              </div>
+              
+              <div className="mt-auto">
+                <AddPersonaDialog onPersonaAdded={refreshPersonas} />
               </div>
             </div>
           )}
@@ -201,7 +207,6 @@ const Index = () => {
                 />
               </div>
             </div>
-            <AddPersonaDialog onPersonaAdded={refreshPersonas} />
           </div>
 
           {/* Alerts */}
