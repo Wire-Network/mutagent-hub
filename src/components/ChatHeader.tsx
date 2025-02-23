@@ -21,7 +21,6 @@ export const ChatHeader = ({ personaName, onBack, onAvatarClick }: ChatHeaderPro
     useEffect(() => {
         const loadAvatar = async () => {
             console.log('Starting avatar load process for:', personaName);
-            console.log('isReady status:', isReady);
             
             if (!isReady) {
                 console.log('Content service not ready yet');
@@ -29,42 +28,30 @@ export const ChatHeader = ({ personaName, onBack, onAvatarClick }: ChatHeaderPro
             }
 
             try {
-                console.log('Fetching persona info for:', personaName);
                 const personaInfo = await getPersonaInfo(personaName);
-                console.log('Persona info received:', personaInfo);
-                
                 if (!personaInfo?.initial_state_cid) {
                     console.log('No initial state CID found');
                     return;
                 }
 
-                console.log('Fetching state data with CID:', personaInfo.initial_state_cid);
                 const stateData = await getContent(personaInfo.initial_state_cid);
-                console.log('State data received:', stateData);
                 
-                // If we have a stored avatar CID, use it
-                if (stateData.data.avatar_cid) {
+                if (stateData.data?.avatar_cid) {
                     try {
-                        console.log('Fetching avatar data with CID:', stateData.data.avatar_cid);
                         const avatarData = await getContent(stateData.data.avatar_cid);
                         console.log('Avatar data received:', avatarData);
                         
-                        if (avatarData?.imageData) {
+                        if (avatarData.data?.imageData) {
+                            const imageData = avatarData.data.imageData;
                             console.log('Setting avatar URL from image data');
-                            setAvatarUrl(`data:image/png;base64,${avatarData.imageData}`);
+                            setAvatarUrl(`data:image/png;base64,${imageData}`);
                             return;
-                        } else {
-                            console.log('No image data found in avatar data');
                         }
                     } catch (error) {
                         console.error('Error fetching avatar:', error);
                     }
-                } else {
-                    console.log('No avatar CID found in state data');
                 }
 
-                // Fallback to placeholder if no avatar is found
-                console.log('Falling back to placeholder avatar');
                 setAvatarUrl("/placeholder.svg");
             } catch (error) {
                 console.error('Error in avatar load process:', error);
@@ -91,7 +78,7 @@ export const ChatHeader = ({ personaName, onBack, onAvatarClick }: ChatHeaderPro
                     Chat with {personaName}
                 </h1>
                 <div className="ml-auto">
-                    <Button
+                    <Button 
                         variant="ghost"
                         size="icon"
                         className="w-12 h-12 rounded-full p-0 overflow-hidden border border-primary/20 hover:border-primary/40 transition-colors"
