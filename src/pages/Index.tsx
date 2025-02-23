@@ -68,7 +68,6 @@ const Index = () => {
                 const avatarData = await pinataService.getContent(stateData.data.avatar_cid);
                 if (avatarData?.imageData) {
                   imageUrl = `data:image/png;base64,${avatarData.imageData}`;
-                  setPersonaAvatars(prev => new Map(prev).set(persona.persona_name, imageUrl));
                 }
               } catch (error) {
                 console.error(`Error fetching avatar for ${persona.persona_name}:`, error);
