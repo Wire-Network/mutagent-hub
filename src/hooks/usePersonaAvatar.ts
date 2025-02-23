@@ -66,7 +66,7 @@ export function usePersonaAvatar() {
             console.log('Generated prompt:', prompt);
 
             const options: GenerateAvatarOptions = {
-                model: "stability-xl",
+                model: "fluently-xl",
                 prompt,
                 height: 512,
                 width: 512,
