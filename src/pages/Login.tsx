@@ -109,10 +109,10 @@ const Login = () => {
                 <div className="mt-8 space-y-6">
                     <Button
                         onClick={handleMetaMaskLogin}
-                        className="w-full h-14 text-lg cyber-button"
+                        className="w-full cyber-button"
                         disabled={isLoading}
                     >
-                        <Wallet className="mr-2 h-5 w-5" />
+                        <Wallet className="mr-2 h-4 w-4" />
                         {isLoading ? "Connecting..." : "Connect with MetaMask"}
                     </Button>
 
