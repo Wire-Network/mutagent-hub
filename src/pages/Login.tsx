@@ -8,7 +8,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useState } from "react";
 import { WireService } from "@/services/wire-service";
 import { MetaMaskService } from "@/services/metamask-service";
-import { Wallet, SwitchCamera } from "lucide-react";
+import { Wallet } from "lucide-react";
 
 const Login = () => {
     const [accountName, setAccountName] = useState("");
@@ -57,10 +57,10 @@ const Login = () => {
         }
     };
 
-    const handleMetaMaskLogin = async (requestNewAccount: boolean = false) => {
+    const handleMetaMaskLogin = async () => {
         setIsLoading(true);
         try {
-            const address = await metamaskService.connectWallet(requestNewAccount);
+            const address = await metamaskService.connectWallet();
             
             // Check if account exists or create new one
             const wireName = await metamaskService.checkAndCreateAccount(address);
@@ -82,7 +82,6 @@ const Login = () => {
                 description: `Successfully connected with MetaMask! WIRE account: ${wireName}`,
             });
             
-            // Force navigation after successful auth
             navigate('/', { replace: true });
         } catch (error) {
             console.error('MetaMask login error:', error);
@@ -107,26 +106,14 @@ const Login = () => {
                 </div>
 
                 <div className="mt-8 space-y-6">
-                    <div className="grid grid-cols-2 gap-4">
-                        <Button
-                            onClick={() => handleMetaMaskLogin(false)}
-                            className="w-full cyber-button"
-                            disabled={isLoading}
-                        >
-                            <Wallet className="mr-2 h-4 w-4" />
-                            {isLoading ? "Connecting..." : "Connect MetaMask"}
-                        </Button>
-                        
-                        <Button
-                            onClick={() => handleMetaMaskLogin(true)}
-                            className="w-full cyber-button"
-                            disabled={isLoading}
-                            variant="outline"
-                        >
-                            <SwitchCamera className="mr-2 h-4 w-4" />
-                            Switch Account
-                        </Button>
-                    </div>
+                    <Button
+                        onClick={handleMetaMaskLogin}
+                        className="w-full cyber-button"
+                        disabled={isLoading}
+                    >
+                        <Wallet className="mr-2 h-4 w-4" />
+                        {isLoading ? "Connecting..." : "Connect with MetaMask"}
+                    </Button>
 
                     <div className="relative">
                         <div className="absolute inset-0 flex items-center">
