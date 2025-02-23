@@ -2,6 +2,14 @@
 import { PinataSDK } from 'pinata-web3';
 import config from '@/config';
 
+interface PinataResponse {
+    data?: {
+        imageData?: string;
+        [key: string]: any;
+    };
+    [key: string]: any;
+}
+
 export class PinataService {
     private static instance: PinataService;
     private pinata: PinataSDK;
@@ -28,12 +36,9 @@ export class PinataService {
 
     async uploadJSON(content: any): Promise<string> {
         try {
-            // Convert content to File object
             const blob = new Blob([JSON.stringify(content)], { type: 'application/json' });
             const file = new File([blob], 'content.json', { type: 'application/json' });
-
             const result = await this.pinata.upload.file(file);
-            console.log('Content uploaded to Pinata:', result);
             return result.IpfsHash;
         } catch (error) {
             console.error('Error uploading to Pinata:', error);
@@ -41,22 +46,9 @@ export class PinataService {
         }
     }
 
-    async getContent(cid: string): Promise<any> {
+    async getContent(cid: string): Promise<PinataResponse> {
         try {
-            console.log('Fetching content from Pinata with CID:', cid);
-            const response = await this.pinata.gateways.get(cid);
-            console.log('Raw Pinata response:', JSON.stringify(response, null, 2));
-            
-            // If the response is already parsed JSON
-            if (response && typeof response === 'object') {
-                if ('metadata' in response && 'imageData' in response) {
-                    return response; // Return avatar data directly
-                } else if ('data' in response) {
-                    return response; // Return persona state data
-                }
-            }
-            
-            // If response is not in expected format, return as is
+            const response = await this.pinata.gateways.get(cid) as PinataResponse;
             return response;
         } catch (error) {
             console.error('Error fetching from IPFS:', error);
@@ -68,8 +60,7 @@ export class PinataService {
         try {
             await this.pinata.gateways.get(cid);
             return true;
-        } catch (error) {
-            console.error('Error checking pin status:', error);
+        } catch {
             return false;
         }
     }
