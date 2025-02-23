@@ -51,23 +51,25 @@ export function AddPersonaDialog({ onPersonaAdded }: { onPersonaAdded?: () => vo
           model: "llama-3.3-70b",
           messages: [{
             role: "system",
-            content: "You are a creative AI that creates witty variations of famous historical names. Each time, pick a different notable figure from history and create a unique variation of their name."
+            content: "You are a creative AI that creates witty variations of famous or popular peoples/characters names. Each time, pick a different notable figure and create a unique variation of their name."
           }, {
             role: "user",
-            content: `Create a unique AI persona by transforming the name of a famous historical figure into a creative variation.
+            content: `Create a unique AI persona by transforming the name of a famous or popular person/character into a creative variation.
 
 Format the response EXACTLY as follows:
 
-Name: [Transform the name of any famous historical figure following these rules:
+Name: [Transform the name of any famous people (from fiction or nonfiction) following these rules:
 1. Use ONLY lowercase letters a-z and numbers 1-5
 2. Keep it recognizable but creative
 3. Maximum 9 characters
-4. Choose someone from these categories: famous scientists, philosophers, artists, writers, or historical leaders
+4. Choose someone from these categories: 
+          -fiction: tv, movies, comics/graphic novels, books, memes
+          -nonfiction: famous scientists, philosophers, artists, writers, or historical leaders
 5. Make it witty and memorable, but ensure people can guess who it references]
 
-Backstory: [2-3 sentences about the chosen historical figure's actual achievements with an AI twist.]
+Backstory: [2-3 sentences about the chosen figure's actual achievements with an AI twist.]
 
-Traits: [List exactly 3 real traits of the historical figure, comma-separated, no period at end]`
+Traits: [List exactly 3 real traits of person/character, comma-separated, no period at end]`
           }],
           temperature: 0.9,
           presence_penalty: 0.8,
