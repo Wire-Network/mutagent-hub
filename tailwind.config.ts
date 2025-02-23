@@ -51,8 +51,8 @@ export default {
         },
       },
       fontFamily: {
-        sans: ["Space Grotesk", "system-ui", "sans-serif"],
-        heading: ["Orbitron", "Space Grotesk", "sans-serif"],
+        sans: ["Quantico", "system-ui", "sans-serif"],
+        heading: ["Quantico", "system-ui", "sans-serif"],
       },
       boxShadow: {
         'neon': "0 0 5px #78FF00, 0 0 20px #78FF00, 0 0 30px #78FF00",
