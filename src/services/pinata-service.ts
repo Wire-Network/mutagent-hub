@@ -49,7 +49,8 @@ export class PinataService {
             
             // If the response is already parsed JSON
             if (response && typeof response === 'object') {
-                if ('metadata' in response && 'imageData' in response) {
+                // If this is avatar data (has metadata and imageData)
+                if ('data' in response && 'imageData' in response.data) {
                     return response; // Return avatar data directly
                 } else if ('data' in response) {
                     return response; // Return persona state data
