@@ -56,14 +56,8 @@ export class PinataService {
                 }
             }
             
-            // Try to parse the response if it's a string
-            try {
-                const parsedData = JSON.parse(response);
-                return parsedData;
-            } catch (e) {
-                console.log('Response is not JSON, returning as is');
-                return response;
-            }
+            // If response is not in expected format, return as is
+            return response;
         } catch (error) {
             console.error('Error fetching from IPFS:', error);
             throw error;
