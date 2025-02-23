@@ -11,11 +11,11 @@ import { PersonaData } from '@/types/persona';
 
 export default function Index() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { isAuthenticated } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const { getPersonas } = usePersonaContent();
 
-  const { data: personas = [], isLoading } = useQuery({
+  const { data: personas = [], isLoading } = useQuery<PersonaData[]>({
     queryKey: ['personas'],
     queryFn: getPersonas
   });
