@@ -43,8 +43,14 @@ export class PinataService {
 
     async getContent(cid: string): Promise<any> {
         try {
+            console.log('Fetching content from Pinata with CID:', cid);
             const data = await this.pinata.gateways.get(cid);
-            return data;
+            console.log('Raw Pinata response:', data);
+            if (data && typeof data === 'object') {
+                return data;
+            } else {
+                throw new Error('Invalid data format received from Pinata');
+            }
         } catch (error) {
             console.error('Error fetching from IPFS:', error);
             throw error;

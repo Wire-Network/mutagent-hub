@@ -66,8 +66,12 @@ const Index = () => {
             if (stateData.data.avatar_cid) {
               try {
                 const avatarData = await pinataService.getContent(stateData.data.avatar_cid);
-                if (avatarData?.imageData) {
+                console.log('Avatar data from Pinata:', avatarData);
+                if (avatarData && typeof avatarData === 'object' && 'imageData' in avatarData) {
                   imageUrl = `data:image/png;base64,${avatarData.imageData}`;
+                  setPersonaAvatars(prev => new Map(prev).set(persona.persona_name, imageUrl));
+                } else {
+                  console.error('Invalid avatar data structure:', avatarData);
                 }
               } catch (error) {
                 console.error(`Error fetching avatar for ${persona.persona_name}:`, error);
