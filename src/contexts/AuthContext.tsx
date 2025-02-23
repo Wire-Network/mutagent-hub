@@ -1,10 +1,11 @@
+
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { PrivateKey } from '@wireio/core';
 
 interface AuthContextType {
     privateKey: string | null;
     accountName: string | null;
-    setCredentials: (accountName: string, privateKey: string) => void;
+    setCredentials: (accountName: string, privateKey: string, isMetaMask?: boolean) => void;
     logout: () => void;
     isAuthenticated: boolean;
 }
@@ -24,10 +25,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
     }, []);
 
-    const setCredentials = (account: string, key: string) => {
+    const setCredentials = (account: string, key: string, isMetaMask: boolean = false) => {
         try {
-            // Validate the private key format
-            PrivateKey.from(key); // This will throw if invalid
+            // Only validate private key format for non-MetaMask credentials
+            if (!isMetaMask) {
+                PrivateKey.from(key); // This will throw if invalid
+            }
             
             // Store credentials
             localStorage.setItem('wire_private_key', key);
@@ -68,4 +71,4 @@ export function useAuth() {
         throw new Error('useAuth must be used within an AuthProvider');
     }
     return context;
-} 
+}

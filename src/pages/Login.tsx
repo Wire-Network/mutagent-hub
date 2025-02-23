@@ -74,8 +74,8 @@ const Login = () => {
             localStorage.setItem('metamask_address', address);
             localStorage.setItem('wire_account', wireName);
 
-            // Update auth context
-            await setCredentials(wireName, signature);
+            // Update auth context with MetaMask flag
+            await setCredentials(wireName, signature, true);
             
             toast({
                 title: "Success",
