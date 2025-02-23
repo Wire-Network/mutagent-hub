@@ -17,10 +17,14 @@ import { usePersonaContent } from "@/hooks/usePersonaContent"
 import { WireService } from "@/services/wire-service"
 import config from "@/config"
 import { useQueryClient } from '@tanstack/react-query'
+import { usePersonaAvatar } from "@/hooks/usePersonaAvatar"
+import { PinataService } from "@/services/pinata-service"
+import { cn } from "@/lib/utils"
 
-export function AddPersonaDialog() {
+export function AddPersonaDialog({ onPersonaAdded }: { onPersonaAdded?: () => void }) {
   const [open, setOpen] = useState(false)
   const [name, setName] = useState("")
+  const [displayName, setDisplayName] = useState("")
   const [nameError, setNameError] = useState("")
   const [backstory, setBackstory] = useState("")
   const [traits, setTraits] = useState("")
@@ -30,10 +34,13 @@ export function AddPersonaDialog() {
   const { isReady, uploadContent } = usePersonaContent()
   const wireService = WireService.getInstance()
   const queryClient = useQueryClient()
+  const pinataService = PinataService.getInstance()
+  const { generateAvatar } = usePersonaAvatar()
 
   const generateRandomPersona = async () => {
     setIsGenerating(true)
     try {
+      console.log('Starting random persona generation...');
       const response = await fetch('https://api.venice.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -43,71 +50,54 @@ export function AddPersonaDialog() {
         body: JSON.stringify({
           model: "llama-3.3-70b",
           messages: [{
+            role: "system",
+            content: "You are a creative AI that generates unique, witty personas. Each time, pick a different notable figure from a broad range of categories (fiction and nonfiction). Do not repeat a figure such as 'charles darwin' if it has already been used."
+          }, {
             role: "user",
-            content: `Create an AI persona based on a famous character from movies, books, TV shows, history, or music.
-Format the response EXACTLY as follows (the name format is strict and must be followed):
-
-Name: [Create a recognizable 9-character name based on a famous character or personality. Use only lowercase letters a-z and numbers 1-5 (no dots). The .ai suffix will be added automatically.]
-Backstory: [Write 2-3 sentences about the character's background and motivations WITHOUT mentioning any names. Focus on their role, achievements, and unique characteristics.]
-Traits: [List exactly 3 personality traits, comma-separated, no period at the end]
-
-Important: The name MUST be exactly 9 characters long using ONLY lowercase letters and numbers 1-5 (no dots or special characters).
-Examples of good character-based names:
-- starkbot15 (Iron Man)
-- sherlock15 (Sherlock Holmes)
-- batmanbot5 (Batman)
-- jedimind15 (Star Wars)
-- thorgod451 (Thor)
-
-Example format:
-Name: starkbot15
-Backstory: A brilliant inventor and billionaire who created advanced technology to protect the world. After a life-changing incident, dedicated their existence to fighting evil using cutting-edge robotic suits and artificial intelligence.
-Traits: genius inventor, charismatic leader, determined hero
-
-Remember: 
-- Name must be AT MOST 9 characters
-- Only use lowercase letters a-z and numbers 1-5
-- NO dots or special characters (the .ai will be added automatically)
-- Make it recognizable based on the character
-- Do NOT mention character names in the backstory
-- Traits must be exactly 3, comma-separated`
+            content: `Create a unique AI persona by transforming the name of a famous or popular person/character into a creative variation.
+  
+  Format the response EXACTLY as follows:
+  
+  Name: [Transform the name of any famous person (from fiction: TV, movies, comics, graphic novels, books, memes; or nonfiction: famous scientists, philosophers, artists, writers, historical leaders) into a creative, witty version. Use only lowercase letters a-z and numbers 1-5, maximum 9 characters.]
+  
+  Backstory: [Write 2-3 sentences about the chosen figure’s achievements with an AI twist.]
+  
+  Traits: [List exactly 3 real traits of the person, comma-separated, no period at end]`
           }],
-          temperature: 0.7
+          temperature: 0.9,
+          presence_penalty: 0.8,
+          frequency_penalty: 1.0,
         })
       })
 
       if (!response.ok) {
+        console.error('Venice API error:', response.status, await response.text());
         throw new Error('Failed to generate persona')
       }
 
       const data = await response.json()
       const content = data.choices[0].message.content
       
-      console.log('AI Response:', content)
+      console.log('AI Raw Response:', content)
       
-      // Parse the response
-      const nameMatch = content.match(/Name:\s*([a-z1-5]{9})/i)
+      const nameMatch = content.match(/Name:[\s\n]*([a-z1-5]{1,9})/i)
       console.log('Name match:', nameMatch)
       
-      const backstoryMatch = content.match(/Backstory:\s*(.*?)(?=\nTraits:|$)/s)
+      const backstoryMatch = content.match(/Backstory:[\s\n]*(.*?)(?=\nTraits:|$)/s)
       console.log('Backstory match:', backstoryMatch)
       
-      const traitsMatch = content.match(/Traits:\s*(.*?)(?=\n|$)/s)
+      const traitsMatch = content.match(/Traits:[\s\n]*(.*?)(?=\n|$)/s)
       console.log('Traits match:', traitsMatch)
 
       if (nameMatch && nameMatch[1]) {
-        const generatedName = nameMatch[1].toLowerCase() + '.ai'
+        const generatedName = nameMatch[1].toLowerCase()
         console.log('Setting name to:', generatedName)
         setName(generatedName)
+        setDisplayName(generatedName)
         validateName(generatedName)
       } else {
-        console.error('Failed to parse name from response')
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to generate valid name, please try again",
-        })
-        return
+        console.error('Failed to parse name from response:', content)
+        throw new Error('Failed to generate valid name, please try again')
       }
 
       if (backstoryMatch && backstoryMatch[1]) {
@@ -126,12 +116,12 @@ Remember:
         title: "Success",
         description: "Generated random persona!",
       })
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error generating persona:', error)
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to generate random persona",
+        description: error.message || "Failed to generate random persona",
       })
     } finally {
       setIsGenerating(false)
@@ -139,48 +129,31 @@ Remember:
   }
 
   const validateName = (value: string) => {
-    // Reset error
     setNameError("")
-    
-    // Check if name ends with .ai
-    if (!value.endsWith('.ai')) {
-      setNameError("Name must end with .ai")
+    const baseName = value.endsWith('.ai') ? value.slice(0, -3) : value
+    if (baseName.length > 9) {
+      setNameError("Name must be at most 9 characters (excluding .ai)")
       return false
     }
-
-    // Get the base name (without .ai)
-    const baseName = value.slice(0, -3)
-    
-    // Check base name length (must be exactly 9 characters)
-    if (baseName.length !== 9) {
-      setNameError("Name must be exactly 9 characters (excluding .ai)")
-      return false
-    }
-
-    // Check for valid characters (only lowercase a-z and numbers 1-5)
     if (!/^[a-z1-5]+$/.test(baseName)) {
       setNameError("Only lowercase letters a-z and numbers 1-5 are allowed")
       return false
     }
-
-    // Check total length (must be exactly 12 characters including .ai)
-    if (value.length !== 12) {
-      setNameError("Total name length must be exactly 12 characters")
-      return false
-    }
-
     return true
   }
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.toLowerCase()
-    setName(value)
-    validateName(value)
+    const baseName = value.endsWith('.ai') ? value.slice(0, -3) : value
+    setDisplayName(baseName)
+    setName(baseName)
+    validateName(baseName)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    const fullName = `${name}.ai`
     if (!validateName(name)) {
       return
     }
@@ -197,46 +170,54 @@ Remember:
     setIsLoading(true)
     try {
       console.log('Starting persona creation process...')
-      console.log('Step 1: Preparing persona data for IPFS')
       
-      // Format traits into array
+      const avatarBase64 = await generateAvatar(fullName, backstory)
+      let avatarCid = null
+
+      if (avatarBase64) {
+        const avatarData = {
+          imageData: avatarBase64,
+          metadata: {
+            version: 1,
+            personaName: fullName,
+            timestamp: new Date().toISOString()
+          }
+        }
+        avatarCid = await pinataService.uploadJSON(avatarData)
+        console.log('Avatar stored in IPFS with CID:', avatarCid)
+      }
+
       const traitArray = traits.split(',').map(t => t.trim()).filter(t => t)
       
-      // Create initial state message
       const message = {
         text: backstory,
         timestamp: new Date().toISOString(),
-        persona: name,
-        traits: traitArray
+        persona: fullName,
+        traits: traitArray,
+        avatar_cid: avatarCid
       }
 
       console.log('Uploading initial state to IPFS:', message)
       const initialStateCid = await uploadContent(message)
       console.log('Initial state uploaded to IPFS with CID:', initialStateCid)
 
-      console.log('Step 2: Creating persona account and deploying contract')
+      console.log('Creating persona account and deploying contract')
       const result = await wireService.addPersona(
-        name.toLowerCase(),
+        fullName,
         backstory,
         initialStateCid
       )
       
-      console.log('Persona creation complete:', {
-        name: name.toLowerCase(),
-        initialStateCid,
-        deployResult: result.deployResult,
-        initResponse: result.initResponse
-      })
+      console.log('Persona creation complete:', result)
 
       toast({
         title: "Success",
         description: "Persona created successfully!",
       })
 
-      // Invalidate and refetch personas query
-      await queryClient.invalidateQueries({ queryKey: ['personas'] })
-      
+      onPersonaAdded?.()
       setOpen(false)
+      setDisplayName("")
       setName("")
       setBackstory("")
       setTraits("")
@@ -281,21 +262,35 @@ Remember:
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <label htmlFor="name">Name</label>
-              <Input
-                id="name"
-                value={name}
-                onChange={handleNameChange}
-                placeholder="e.g. starkbot15.ai"
-                required
-                className={nameError ? "border-red-500" : ""}
-                pattern="[a-z1-5]{9}\.ai"
-                title="Must be 9 characters using only lowercase letters and numbers 1-5, followed by .ai"
-              />
+              <div className="relative group">
+                <Input
+                  id="name"
+                  value={displayName}
+                  onChange={handleNameChange}
+                  placeholder="e.g. starkbot15"
+                  required
+                  className={cn(
+                    nameError ? "border-red-500" : "",
+                    "pr-12 transition-all duration-300"
+                  )}
+                  pattern="[a-z1-5]{1,9}"
+                  title="Must be up to 9 characters using only lowercase letters and numbers 1-5"
+                />
+                <span 
+                  className={cn(
+                    "absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground",
+                    "transition-all duration-300 group-hover:text-primary",
+                    displayName ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2"
+                  )}
+                >
+                  .ai
+                </span>
+              </div>
               {nameError && (
-                <p className="text-sm text-red-500">{nameError}</p>
+                <p className="text-sm text-red-500 animate-fade-in">{nameError}</p>
               )}
               <p className="text-sm text-muted-foreground">
-                Must be exactly 9 characters using only lowercase letters and numbers 1-5, followed by .ai
+                Must be at most 9 characters using only lowercase letters and numbers 1-5
               </p>
             </div>
             <div className="grid gap-2">
@@ -306,6 +301,7 @@ Remember:
                 onChange={(e) => setBackstory(e.target.value)}
                 placeholder="Tell us about this character's background..."
                 required
+                className="min-h-[100px] resize-none border border-muted/30 focus:border-primary focus-visible:ring-0"
               />
             </div>
             <div className="grid gap-2">

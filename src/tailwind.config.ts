@@ -51,11 +51,11 @@ export default {
         },
       },
       fontFamily: {
-        sans: ["Quantico", "system-ui", "sans-serif"],
-        heading: ["Quantico", "system-ui", "sans-serif"],
+        sans: ["Space Grotesk", "system-ui", "sans-serif"],
+        heading: ["Orbitron", "Space Grotesk", "sans-serif"],
       },
       boxShadow: {
-        'neon': "0 0 5px #78FF00, 0 0 20px #78FF00, 0 0 30px #78FF00",
+        neon: "0 0 5px #78FF00, 0 0 20px #78FF00, 0 0 30px #78FF00",
         'neon-sm': "0 0 2px #78FF00, 0 0 10px #78FF00",
       },
       keyframes: {

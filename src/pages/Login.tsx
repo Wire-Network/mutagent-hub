@@ -1,3 +1,4 @@
+
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -6,6 +7,8 @@ import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ui/use-toast";
 import { useState } from "react";
 import { WireService } from "@/services/wire-service";
+import { MetaMaskService } from "@/services/metamask-service";
+import { Wallet } from "lucide-react";
 
 const Login = () => {
     const [accountName, setAccountName] = useState("");
@@ -15,6 +18,7 @@ const Login = () => {
     const { toast } = useToast();
     const navigate = useNavigate();
     const wireService = WireService.getInstance();
+    const metamaskService = MetaMaskService.getInstance();
 
     useEffect(() => {
         if (isAuthenticated) {
@@ -30,7 +34,6 @@ const Login = () => {
             const trimmedAccount = accountName.trim();
             const trimmedKey = privateKey.trim();
 
-            // Verify account and private key
             const isValid = await wireService.verifyAccount(trimmedAccount, trimmedKey);
             
             if (!isValid) {
@@ -54,6 +57,45 @@ const Login = () => {
         }
     };
 
+    const handleMetaMaskLogin = async () => {
+        setIsLoading(true);
+        try {
+            // Request permission to connect and select account
+            const address = await metamaskService.connectWallet(true);
+            
+            // Check if account exists or create new one
+            const wireName = await metamaskService.checkAndCreateAccount(address);
+            
+            // Sign login message
+            const message = `Login to WIRE with account: ${wireName}`;
+            const signature = await metamaskService.signMessage(message);
+            
+            // Store authentication data
+            localStorage.setItem('metamask_signature', signature);
+            localStorage.setItem('metamask_address', address);
+            localStorage.setItem('wire_account', wireName);
+
+            // Update auth context with MetaMask flag
+            await setCredentials(wireName, signature, true);
+            
+            toast({
+                title: "Success",
+                description: `Successfully connected with MetaMask! WIRE account: ${wireName}`,
+            });
+            
+            navigate('/', { replace: true });
+        } catch (error) {
+            console.error('MetaMask login error:', error);
+            toast({
+                variant: "destructive",
+                title: "Error",
+                description: error instanceof Error ? error.message : "Failed to connect with MetaMask",
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
     return (
         <div className="min-h-screen flex items-center justify-center bg-background">
             <div className="w-full max-w-md space-y-8 p-8 bg-card rounded-lg shadow-lg">
@@ -64,8 +106,28 @@ const Login = () => {
                     </p>
                 </div>
 
-                <form onSubmit={handleSubmit} className="mt-8 space-y-6">
-                    <div className="space-y-4">
+                <div className="mt-8 space-y-6">
+                    <Button
+                        onClick={handleMetaMaskLogin}
+                        className="w-full cyber-button"
+                        disabled={isLoading}
+                    >
+                        <Wallet className="mr-2 h-4 w-4" />
+                        {isLoading ? "Connecting..." : "Connect with MetaMask"}
+                    </Button>
+
+                    <div className="relative">
+                        <div className="absolute inset-0 flex items-center">
+                            <span className="w-full border-t" />
+                        </div>
+                        <div className="relative flex justify-center text-xs uppercase">
+                            <span className="bg-background px-2 text-muted-foreground">
+                                Or continue with
+                            </span>
+                        </div>
+                    </div>
+
+                    <form onSubmit={handleSubmit} className="space-y-6">
                         <div>
                             <label htmlFor="accountName" className="block text-sm font-medium mb-2">
                                 Account Name
@@ -92,16 +154,16 @@ const Login = () => {
                                 required
                             />
                         </div>
-                    </div>
 
-                    <Button
-                        type="submit"
-                        className="w-full"
-                        disabled={isLoading}
-                    >
-                        {isLoading ? "Signing in..." : "Sign in"}
-                    </Button>
-                </form>
+                        <Button
+                            type="submit"
+                            className="w-full cyber-button"
+                            disabled={isLoading}
+                        >
+                            {isLoading ? "Signing in..." : "Sign in with Private Key"}
+                        </Button>
+                    </form>
+                </div>
             </div>
         </div>
     );
