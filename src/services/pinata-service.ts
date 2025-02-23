@@ -38,9 +38,7 @@ export class PinataService {
         try {
             const blob = new Blob([JSON.stringify(content)], { type: 'application/json' });
             const file = new File([blob], 'content.json', { type: 'application/json' });
-
             const result = await this.pinata.upload.file(file);
-            console.log('Content uploaded to Pinata:', result);
             return result.IpfsHash;
         } catch (error) {
             console.error('Error uploading to Pinata:', error);
@@ -50,9 +48,7 @@ export class PinataService {
 
     async getContent(cid: string): Promise<PinataResponse> {
         try {
-            console.log('Fetching content from Pinata with CID:', cid);
             const response = await this.pinata.gateways.get(cid) as PinataResponse;
-            console.log('Raw Pinata response:', JSON.stringify(response, null, 2));
             return response;
         } catch (error) {
             console.error('Error fetching from IPFS:', error);
@@ -64,8 +60,7 @@ export class PinataService {
         try {
             await this.pinata.gateways.get(cid);
             return true;
-        } catch (error) {
-            console.error('Error checking pin status:', error);
+        } catch {
             return false;
         }
     }
