@@ -261,7 +261,7 @@ Important: The name MUST be exactly 9 characters long using ONLY lowercase lette
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <label htmlFor="name">Name</label>
-              <div className="relative">
+              <div className="relative group">
                 <Input
                   id="name"
                   value={displayName}
@@ -270,20 +270,27 @@ Important: The name MUST be exactly 9 characters long using ONLY lowercase lette
                   required
                   className={cn(
                     nameError ? "border-red-500" : "",
-                    "pr-8"
+                    "pr-12 transition-all duration-300"
                   )}
                   pattern="[a-z1-5]{1,9}"
                   title="Must be up to 9 characters using only lowercase letters and numbers 1-5"
                 />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                <span 
+                  className={cn(
+                    "absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground",
+                    "transition-all duration-300 group-hover:text-primary",
+                    "after:content-['.ai'] after:animate-fade-in",
+                    displayName ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2"
+                  )}
+                >
                   .ai
                 </span>
               </div>
               {nameError && (
-                <p className="text-sm text-red-500">{nameError}</p>
+                <p className="text-sm text-red-500 animate-fade-in">{nameError}</p>
               )}
               <p className="text-sm text-muted-foreground">
-                Must be up to 9 characters using only lowercase letters and numbers 1-5
+                Must be at most 9 characters using only lowercase letters and numbers 1-5
               </p>
             </div>
             <div className="grid gap-2">
