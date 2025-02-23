@@ -44,12 +44,25 @@ export class PinataService {
     async getContent(cid: string): Promise<any> {
         try {
             console.log('Fetching content from Pinata with CID:', cid);
-            const data = await this.pinata.gateways.get(cid);
-            console.log('Raw Pinata response:', data);
-            if (data && typeof data === 'object') {
-                return data;
-            } else {
-                throw new Error('Invalid data format received from Pinata');
+            const response = await this.pinata.gateways.get(cid);
+            console.log('Raw Pinata response:', JSON.stringify(response, null, 2));
+            
+            // If the response is already parsed JSON
+            if (response && typeof response === 'object') {
+                if ('metadata' in response && 'imageData' in response) {
+                    return response; // Return avatar data directly
+                } else if ('data' in response) {
+                    return response; // Return persona state data
+                }
+            }
+            
+            // Try to parse the response if it's a string
+            try {
+                const parsedData = JSON.parse(response);
+                return parsedData;
+            } catch (e) {
+                console.log('Response is not JSON, returning as is');
+                return response;
             }
         } catch (error) {
             console.error('Error fetching from IPFS:', error);

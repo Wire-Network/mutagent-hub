@@ -59,19 +59,28 @@ const Index = () => {
             }
 
             const stateData = await getContent(personaInfo.initial_state_cid) as PersonaState;
-            console.log('Persona state data:', stateData);
+            console.log('Persona state data:', JSON.stringify(stateData, null, 2));
             
             // Use stored avatar if available
             let imageUrl = "/placeholder.svg";
             if (stateData.data.avatar_cid) {
               try {
                 const avatarData = await pinataService.getContent(stateData.data.avatar_cid);
-                console.log('Avatar data from Pinata:', avatarData);
-                if (avatarData && typeof avatarData === 'object' && 'imageData' in avatarData) {
-                  imageUrl = `data:image/png;base64,${avatarData.imageData}`;
-                  setPersonaAvatars(prev => new Map(prev).set(persona.persona_name, imageUrl));
-                } else {
-                  console.error('Invalid avatar data structure:', avatarData);
+                console.log('Avatar data from Pinata:', JSON.stringify(avatarData, null, 2));
+                
+                // Try different possible data structures
+                if (avatarData && typeof avatarData === 'object') {
+                  if ('imageData' in avatarData) {
+                    imageUrl = `data:image/png;base64,${avatarData.imageData}`;
+                  } else if ('data' in avatarData && 'imageData' in avatarData.data) {
+                    imageUrl = `data:image/png;base64,${avatarData.data.imageData}`;
+                  }
+                  
+                  if (imageUrl !== "/placeholder.svg") {
+                    setPersonaAvatars(prev => new Map(prev).set(persona.persona_name, imageUrl));
+                  } else {
+                    console.error('Invalid avatar data structure:', avatarData);
+                  }
                 }
               } catch (error) {
                 console.error(`Error fetching avatar for ${persona.persona_name}:`, error);
