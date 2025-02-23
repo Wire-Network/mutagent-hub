@@ -1,3 +1,4 @@
+
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from "@/components/ui/toaster";
@@ -20,17 +21,23 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 };
 
 function AppRoutes() {
+    const { isAuthenticated } = useAuth();
+
     return (
         <Routes>
-            <Route path="/login" element={<Login />} />
             <Route 
                 path="/" 
                 element={
-                    <ProtectedRoute>
-                        <Index />
-                    </ProtectedRoute>
+                    isAuthenticated ? (
+                        <ProtectedRoute>
+                            <Index />
+                        </ProtectedRoute>
+                    ) : (
+                        <Navigate to="/login" replace />
+                    )
                 } 
             />
+            <Route path="/login" element={<Login />} />
             <Route 
                 path="/chat/:personaName" 
                 element={
