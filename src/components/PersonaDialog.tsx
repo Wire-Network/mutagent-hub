@@ -21,7 +21,6 @@ interface PersonaDialogProps {
 export function PersonaDialog({ open, onOpenChange, personaName }: PersonaDialogProps) {
     const { getPersonaInfo } = useWire();
     const { isReady, getContent } = usePersonaContent();
-    const { generateAvatar } = usePersonaAvatar();
     const [personaData, setPersonaData] = useState<PersonaState | null>(null);
     const [avatarUrl, setAvatarUrl] = useState<string>("/placeholder.svg");
     const pinataService = PinataService.getInstance();
