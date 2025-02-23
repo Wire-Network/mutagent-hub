@@ -51,32 +51,39 @@ export function AddPersonaDialog({ onPersonaAdded }: { onPersonaAdded?: () => vo
           model: "llama-3.3-70b",
           messages: [{
             role: "system",
-            content: "You are a creative AI that creates witty names by directly referencing famous figures and icons. ALWAYS use the exact name of the person/character as your base, just modified with numbers. Example: einstein -> einst3in1, shakespeare -> shak3spr, davinci -> davinci2."
+            content: "You are a creative AI that creates witty variations of famous people's names. IMPORTANT: Do not reuse the examples provided - create new variations for different historical figures each time."
           }, {
             role: "user",
-            content: `Create an AI persona by taking a DIRECT famous name and modifying it slightly. DO NOT create new characters or interpretations.
+            content: `Create a unique AI persona by modifying a famous person's name. Pick a NEW person each time, don't reuse previous examples.
 
 Format the response EXACTLY as follows:
 
-Name: [Take a famous person's name and modify it by:
-1. Using ONLY lowercase letters a-z and numbers 1-5
-2. Keeping it recognizable (e.g., 'einst3in1' for Einstein, 'plat0123' for Plato)
+Name: [Transform a famous person's name following these rules:
+1. Use ONLY lowercase letters a-z and numbers 1-5
+2. Keep it recognizable but unique
 3. Maximum 9 characters
-Choose from these categories ONLY:
-- Scientists: Einstein, Tesla, Newton, Darwin
-- Philosophers: Plato, Aristotle, Socrates
-- Artists: Picasso, DaVinci, VanGogh
-- Writers: Shakespeare, Hemingway, Tolkien
+4. DO NOT use the example names provided below - pick a different person!
+
+Choose ONE person from these categories:
+- Scientists: Newton, Darwin, Curie, Galileo, Hawking
+- Philosophers: Socrates, Aristotle, Confucius
+- Artists: Picasso, VanGogh, Monet, Dali
+- Writers: Tolkien, Homer, Austen
 - Historical leaders: Caesar, Napoleon, Cleopatra
-Do NOT create original characters or adaptations - use the actual names!]
 
-Backstory: [2-3 sentences updating the ACTUAL historical figure's story with an AI twist. Reference their real achievements.]
+Examples of the format (DO NOT USE THESE - pick different names):
+Bad: "einstein2" (too simple), "xyz123" (not recognizable)
+Good: "newton135", "picass0", "tolkien2" (but pick different people!)
 
-Traits: [List exactly 3 personality traits from the actual historical figure, comma-separated, no period at end]`
+Pick someone NEW and create a unique variation!]
+
+Backstory: [2-3 sentences about the ACTUAL historical figure's achievements with an AI twist.]
+
+Traits: [List exactly 3 real traits of the historical figure, comma-separated, no period at end]`
           }],
-          temperature: 0.7,
-          presence_penalty: 0.5,
-          frequency_penalty: 0.5,
+          temperature: 0.9,
+          presence_penalty: 0.8,
+          frequency_penalty: 1.0,
         })
       })
 
