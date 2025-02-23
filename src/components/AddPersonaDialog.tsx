@@ -51,33 +51,21 @@ export function AddPersonaDialog({ onPersonaAdded }: { onPersonaAdded?: () => vo
           model: "llama-3.3-70b",
           messages: [{
             role: "system",
-            content: "You are a creative AI that creates witty variations of famous people's names. IMPORTANT: Do not reuse the examples provided - create new variations for different historical figures each time."
+            content: "You are a creative AI that creates witty variations of famous historical names. Each time, pick a different notable figure from history and create a unique variation of their name."
           }, {
             role: "user",
-            content: `Create a unique AI persona by modifying a famous person's name. Pick a NEW person each time, don't reuse previous examples.
+            content: `Create a unique AI persona by transforming the name of a famous historical figure into a creative variation.
 
 Format the response EXACTLY as follows:
 
-Name: [Transform a famous person's name following these rules:
+Name: [Transform the name of any famous historical figure following these rules:
 1. Use ONLY lowercase letters a-z and numbers 1-5
-2. Keep it recognizable but unique
+2. Keep it recognizable but creative
 3. Maximum 9 characters
-4. DO NOT use the example names provided below - pick a different person!
+4. Choose someone from these categories: famous scientists, philosophers, artists, writers, or historical leaders
+5. Make it witty and memorable, but ensure people can guess who it references]
 
-Choose ONE person from these categories:
-- Scientists: Newton, Darwin, Curie, Galileo, Hawking
-- Philosophers: Socrates, Aristotle, Confucius
-- Artists: Picasso, VanGogh, Monet, Dali
-- Writers: Tolkien, Homer, Austen
-- Historical leaders: Caesar, Napoleon, Cleopatra
-
-Examples of the format (DO NOT USE THESE - pick different names):
-Bad: "einstein2" (too simple), "xyz123" (not recognizable)
-Good: "newton135", "picass0", "tolkien2" (but pick different people!)
-
-Pick someone NEW and create a unique variation!]
-
-Backstory: [2-3 sentences about the ACTUAL historical figure's achievements with an AI twist.]
+Backstory: [2-3 sentences about the chosen historical figure's actual achievements with an AI twist.]
 
 Traits: [List exactly 3 real traits of the historical figure, comma-separated, no period at end]`
           }],
