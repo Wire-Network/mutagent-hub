@@ -108,25 +108,36 @@ export class MetaMaskService {
         try {
             const wireName = this.addressToWireName(address);
             
-            // First, check if the account exists using get_account
+            // Check if account exists
             try {
-                await this.wireService.api.v1.chain.get_account(wireName);
-                console.log('Account exists, using existing account:', wireName);
+                const result = await this.wireService.getRows({
+                    contract: 'sysio',
+                    scope: 'sysio',
+                    table: 'userres',
+                    lower_bound: wireName,
+                    upper_bound: wireName,
+                    limit: 1
+                });
+                
+                // If account exists, return the name without trying to create it
+                if (result.rows.length > 0) {
+                    console.log('Account exists, using existing account:', wireName);
+                    return wireName;
+                }
+                
+                // Only create a new account if it doesn't exist
+                console.log('Account does not exist, creating:', wireName);
+                await this.createNewAccount(wireName, address);
                 return wireName;
             } catch (error) {
-                // If get_account throws an error, the account doesn't exist
-                console.log('Account does not exist, creating:', wireName);
-                try {
-                    await this.createNewAccount(wireName, address);
+                // If we get an account_exists error, the account exists
+                if (error instanceof Error && error.message.includes('account_name_exists')) {
+                    console.log('Account exists (caught from error), using existing account:', wireName);
                     return wireName;
-                } catch (createError) {
-                    // If we get an account_exists error during creation, the account already exists
-                    if (createError instanceof Error && createError.message.includes('account_name_exists')) {
-                        console.log('Account exists (caught during creation), using existing account:', wireName);
-                        return wireName;
-                    }
-                    throw createError;
                 }
+                // For any other error, throw it
+                console.error('Error checking account:', error);
+                throw error;
             }
         } catch (error) {
             console.error('Error in checkAndCreateAccount:', error);
