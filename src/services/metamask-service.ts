@@ -29,7 +29,6 @@ export class MetaMaskService {
         try {
             this.provider = new ethers.BrowserProvider(window.ethereum);
             
-            // If requesting a new account, prompt MetaMask to show account selection
             if (requestNewAccount) {
                 await window.ethereum.request({
                     method: 'wallet_requestPermissions',
@@ -108,7 +107,7 @@ export class MetaMaskService {
         try {
             const wireName = this.addressToWireName(address);
             
-            // Check if account exists
+            // First try to get account info directly
             try {
                 const result = await this.wireService.getRows({
                     contract: 'sysio',
@@ -119,24 +118,27 @@ export class MetaMaskService {
                     limit: 1
                 });
                 
-                // If account exists, return the name without trying to create it
                 if (result.rows.length > 0) {
                     console.log('Account exists, using existing account:', wireName);
                     return wireName;
                 }
-                
-                // Only create a new account if it doesn't exist
+            } catch (error) {
+                console.log('Error checking account existence:', error);
+            }
+
+            // If account doesn't exist, try to create it
+            try {
                 console.log('Account does not exist, creating:', wireName);
                 await this.createNewAccount(wireName, address);
                 return wireName;
             } catch (error) {
-                // If we get an account_exists error, the account exists
-                if (error instanceof Error && error.message.includes('account_name_exists')) {
-                    console.log('Account exists (caught from error), using existing account:', wireName);
+                // If we get an account_exists error, the account exists - return it
+                if (error instanceof Error && 
+                    (error.message.includes('account_name_exists') || 
+                     error.message.includes('name is already taken'))) {
+                    console.log('Account already exists (caught from creation error):', wireName);
                     return wireName;
                 }
-                // For any other error, throw it
-                console.error('Error checking account:', error);
                 throw error;
             }
         } catch (error) {
@@ -147,18 +149,12 @@ export class MetaMaskService {
 
     private async createNewAccount(wireName: string, address: string): Promise<void> {
         try {
-            // Get public key from MetaMask
             const message = "Retrieve Public Key";
             const signature = await this.signMessage(message);
-            
-            // Recover public key using ethers utils
             const msgHash = ethers.hashMessage(message);
             const publicKey = ethers.SigningKey.recoverPublicKey(msgHash, signature);
-            
-            // Convert Ethereum public key to WIRE format
             const formattedPubKey = this.ethPubKeyToWirePubKey(publicKey);
 
-            // Prepare sysio authorization
             const sysioAuth = [
                 PermissionLevel.from({ 
                     actor: Name.from('sysio'), 
@@ -166,7 +162,6 @@ export class MetaMaskService {
                 })
             ];
 
-            // Register account on WIRE with sysio authority
             await this.wireService.pushTransaction(
                 {
                     account: 'sysio',
