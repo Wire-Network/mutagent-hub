@@ -51,17 +51,26 @@ export function AddPersonaDialog({ onPersonaAdded }: { onPersonaAdded?: () => vo
           model: "llama-3.3-70b",
           messages: [{
             role: "system",
-            content: "You are a creative AI that generates diverse and unique character personas. Avoid using obvious or common characters. Be original and surprising with your choices."
+            content: "You are a creative AI that specializes in generating witty, memorable character names based on historical figures, pop culture, and clever wordplay. You excel at creating names that are both recognizable and unique."
           }, {
             role: "user",
-            content: `Create an AI persona based on a completely random character archetype - avoid obvious choices like detectives or common characters.
+            content: `Create an AI persona by crafting a clever name that plays on famous historical figures, pop culture icons, or well-known concepts. Make it witty and memorable.
+
 Format the response EXACTLY as follows (the name format is strict and must be followed):
 
-Name: [Create a unique 9-character name based on the character's role or nature. Use only lowercase letters a-z and numbers 1-5 (no dots). The .ai suffix will be added automatically.]
-Backstory: [Write 2-3 sentences about the character's background and motivations WITHOUT mentioning any names. Focus on their role, achievements, and unique characteristics.]
-Traits: [List exactly 3 personality traits, comma-separated, no period at the end]
+Name: [Create a clever 9-character name that's a play on words or reference to:
+- Historical figures (e.g., socrat3s, aristotl3)
+- Scientists/inventors (e.g., tesla123, edison15)
+- Pop culture icons (e.g., chaplain2)
+- Literary characters (e.g., sherlock1)
+- Mythological figures (e.g., zeus1234)
+Use only lowercase letters a-z and numbers 1-5. The .ai suffix will be added automatically.]
 
-Important: The name MUST be exactly 9 characters long using ONLY lowercase letters and numbers 1-5 (no dots or special characters).`
+Backstory: [Write 2-3 sentences that tie into the name's origin while creating a unique spin. If the name references a historical figure or character, create an AI twist on their story.]
+
+Traits: [List exactly 3 personality traits that reflect both the original reference and the AI adaptation, comma-separated, no period at the end]
+
+Important: The name MUST be at most 9 characters using ONLY lowercase letters and numbers 1-5 (no dots or special characters). Make sure the name is recognizable enough that users can guess its inspiration.`
           }],
           temperature: 0.9,
           presence_penalty: 1.0,
