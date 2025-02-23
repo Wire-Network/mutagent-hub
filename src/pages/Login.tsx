@@ -8,7 +8,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { useState } from "react";
 import { WireService } from "@/services/wire-service";
 import { MetaMaskService } from "@/services/metamask-service";
-import { Wallet } from "lucide-react";
+import { Wallet, SwitchCamera } from "lucide-react";
 
 const Login = () => {
     const [accountName, setAccountName] = useState("");
@@ -57,10 +57,10 @@ const Login = () => {
         }
     };
 
-    const handleMetaMaskLogin = async () => {
+    const handleMetaMaskLogin = async (requestNewAccount: boolean = false) => {
         setIsLoading(true);
         try {
-            const address = await metamaskService.connectWallet();
+            const address = await metamaskService.connectWallet(requestNewAccount);
             
             // Check if account exists or create new one
             const wireName = await metamaskService.checkAndCreateAccount(address);
@@ -106,14 +106,26 @@ const Login = () => {
                 </div>
 
                 <div className="mt-8 space-y-6">
-                    <Button
-                        onClick={handleMetaMaskLogin}
-                        className="w-full cyber-button"
-                        disabled={isLoading}
-                    >
-                        <Wallet className="mr-2 h-4 w-4" />
-                        {isLoading ? "Connecting..." : "Connect with MetaMask"}
-                    </Button>
+                    <div className="space-y-4">
+                        <Button
+                            onClick={() => handleMetaMaskLogin(false)}
+                            className="w-full h-14 text-lg cyber-button"
+                            disabled={isLoading}
+                        >
+                            <Wallet className="mr-2 h-5 w-5" />
+                            {isLoading ? "Connecting..." : "Connect MetaMask"}
+                        </Button>
+                        
+                        <Button
+                            onClick={() => handleMetaMaskLogin(true)}
+                            className="w-full cyber-button"
+                            disabled={isLoading}
+                            variant="outline"
+                        >
+                            <SwitchCamera className="mr-2 h-4 w-4" />
+                            Switch MetaMask Account
+                        </Button>
+                    </div>
 
                     <div className="relative">
                         <div className="absolute inset-0 flex items-center">
