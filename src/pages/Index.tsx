@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
@@ -27,7 +26,6 @@ const Index = () => {
   const [personaAvatars, setPersonaAvatars] = useState<Map<string, string>>(new Map());
   const queryClient = useQueryClient();
   const pinataService = PinataService.getInstance();
-  const [open, setOpen] = useState(false);
 
   const { data: personas = [], isLoading, error: queryError } = useQuery({
     queryKey: ['personas'],
@@ -185,16 +183,7 @@ const Index = () => {
                 </div>
                 
                 <div className="mt-auto">
-                  <Button 
-                    variant="default" 
-                    className="w-full cyber-button"
-                    onClick={() => {
-                      setOpen(!open)
-                    }}
-                  >
-                    <UserPlus className="h-4 w-4" />
-                    Add New Persona
-                  </Button>
+                  <AddPersonaDialog onPersonaAdded={refreshPersonas} />
                 </div>
               </div>
 
