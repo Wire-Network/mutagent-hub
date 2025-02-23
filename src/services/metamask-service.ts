@@ -1,3 +1,4 @@
+
 import { ethers } from 'ethers';
 import { WireService } from './wire-service';
 import config from '../config';
@@ -34,7 +35,6 @@ export class MetaMaskService {
         const stored = localStorage.getItem('accounts');
         if (stored) {
             this.connectedAccounts = JSON.parse(stored);
-            // Ensure at least one account is selected if we have accounts
             if (this.connectedAccounts.length && !this.connectedAccounts.some(acc => acc.selected)) {
                 this.connectedAccounts[0].selected = true;
             }
@@ -49,16 +49,17 @@ export class MetaMaskService {
         if (typeof window !== 'undefined' && window.ethereum) {
             this.provider = new ethers.BrowserProvider(window.ethereum);
             
-            // Set up event listeners
+            // Use proper typing for each event handler
             window.ethereum.on('accountsChanged', (accounts: string[]) => {
                 this.handleAccountsChanged(accounts);
             });
 
-            window.ethereum.on('chainChanged', (chainId: string) => {
+            window.ethereum.on('chainChanged', (_chainId: string) => {
+                // Handle chain change by reloading the page
                 window.location.reload();
             });
 
-            window.ethereum.on('disconnect', () => {
+            window.ethereum.on('disconnect', (_error: { code: number; message: string }) => {
                 this.handleDisconnect();
             });
         }
@@ -68,7 +69,6 @@ export class MetaMaskService {
         if (accounts.length === 0) {
             this.handleDisconnect();
         } else {
-            // Update the selected account
             const newAccount = accounts[0];
             const wireName = this.addressToWireName(newAccount);
             
