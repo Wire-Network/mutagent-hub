@@ -1,17 +1,26 @@
-
 import { ethers } from 'ethers';
 import { WireService } from './wire-service';
 import config from '../config';
 import { PermissionLevel, Name, KeyType, Bytes, PublicKey, getCurve } from '@wireio/core';
+
+interface ConnectedAccount {
+    selected?: boolean;
+    address: string;
+    type: 'metamask';
+    username: string;
+}
 
 export class MetaMaskService {
     private static instance: MetaMaskService;
     private provider: ethers.BrowserProvider | null = null;
     private wireService: WireService;
     private readonly curve = getCurve(KeyType.EM);
+    private connectedAccounts: ConnectedAccount[] = [];
 
     private constructor() {
         this.wireService = WireService.getInstance();
+        this.loadAccountsFromStorage();
+        this.initializeProvider();
     }
 
     static getInstance(): MetaMaskService {
@@ -21,14 +30,71 @@ export class MetaMaskService {
         return MetaMaskService.instance;
     }
 
+    private loadAccountsFromStorage() {
+        const stored = localStorage.getItem('accounts');
+        if (stored) {
+            this.connectedAccounts = JSON.parse(stored);
+            // Ensure at least one account is selected if we have accounts
+            if (this.connectedAccounts.length && !this.connectedAccounts.some(acc => acc.selected)) {
+                this.connectedAccounts[0].selected = true;
+            }
+        }
+    }
+
+    private saveAccountsToStorage() {
+        localStorage.setItem('accounts', JSON.stringify(this.connectedAccounts));
+    }
+
+    private async initializeProvider() {
+        if (typeof window !== 'undefined' && window.ethereum) {
+            this.provider = new ethers.BrowserProvider(window.ethereum);
+            
+            // Set up event listeners
+            window.ethereum.on('accountsChanged', (accounts: string[]) => {
+                this.handleAccountsChanged(accounts);
+            });
+
+            window.ethereum.on('chainChanged', (chainId: string) => {
+                window.location.reload();
+            });
+
+            window.ethereum.on('disconnect', () => {
+                this.handleDisconnect();
+            });
+        }
+    }
+
+    private handleAccountsChanged(accounts: string[]) {
+        if (accounts.length === 0) {
+            this.handleDisconnect();
+        } else {
+            // Update the selected account
+            const newAccount = accounts[0];
+            const wireName = this.addressToWireName(newAccount);
+            
+            this.connectedAccounts = this.connectedAccounts.map(acc => ({
+                ...acc,
+                selected: acc.address.toLowerCase() === newAccount.toLowerCase()
+            }));
+
+            this.saveAccountsToStorage();
+        }
+    }
+
+    private handleDisconnect() {
+        this.connectedAccounts = [];
+        localStorage.removeItem('accounts');
+        localStorage.removeItem('metamask_signature');
+        localStorage.removeItem('metamask_address');
+        localStorage.removeItem('wire_account');
+    }
+
     async connectWallet(requestNewAccount: boolean = false): Promise<string> {
         if (!window.ethereum) {
             throw new Error('MetaMask is not installed');
         }
 
         try {
-            this.provider = new ethers.BrowserProvider(window.ethereum);
-            
             if (requestNewAccount) {
                 await window.ethereum.request({
                     method: 'wallet_requestPermissions',
@@ -36,8 +102,26 @@ export class MetaMaskService {
                 });
             }
             
-            const accounts = await this.provider.send('eth_requestAccounts', []);
-            return accounts[0];
+            const accounts = await this.provider!.send('eth_requestAccounts', []);
+            const address = accounts[0];
+            const wireName = this.addressToWireName(address);
+
+            // Update connected accounts
+            const newAccount: ConnectedAccount = {
+                address,
+                type: 'metamask',
+                username: wireName,
+                selected: true
+            };
+
+            // Update selection state for all accounts
+            this.connectedAccounts = [
+                ...this.connectedAccounts.map(acc => ({ ...acc, selected: false })),
+                newAccount
+            ];
+
+            this.saveAccountsToStorage();
+            return address;
         } catch (error) {
             console.error('Error connecting to MetaMask:', error);
             throw error;
@@ -107,7 +191,16 @@ export class MetaMaskService {
         try {
             const wireName = this.addressToWireName(address);
             
-            // First try to get account info directly
+            // First check if account exists in our local storage
+            const storedAccounts = this.connectedAccounts;
+            const existingAccount = storedAccounts.find(acc => acc.username === wireName);
+            
+            if (existingAccount) {
+                console.log('Account exists in local storage:', wireName);
+                return wireName;
+            }
+
+            // Then check on chain
             try {
                 const result = await this.wireService.getRows({
                     contract: 'sysio',
@@ -119,24 +212,23 @@ export class MetaMaskService {
                 });
                 
                 if (result.rows.length > 0) {
-                    console.log('Account exists, using existing account:', wireName);
+                    console.log('Account exists on chain:', wireName);
                     return wireName;
                 }
             } catch (error) {
-                console.log('Error checking account existence:', error);
+                console.log('Error checking account on chain:', error);
             }
 
-            // If account doesn't exist, try to create it
+            // If account doesn't exist anywhere, create it
             try {
-                console.log('Account does not exist, creating:', wireName);
+                console.log('Creating new account:', wireName);
                 await this.createNewAccount(wireName, address);
                 return wireName;
             } catch (error) {
-                // If we get an account_exists error, the account exists - return it
                 if (error instanceof Error && 
                     (error.message.includes('account_name_exists') || 
                      error.message.includes('name is already taken'))) {
-                    console.log('Account already exists (caught from creation error):', wireName);
+                    console.log('Account creation failed but account exists:', wireName);
                     return wireName;
                 }
                 throw error;
@@ -145,6 +237,10 @@ export class MetaMaskService {
             console.error('Error in checkAndCreateAccount:', error);
             throw error;
         }
+    }
+
+    getSelectedAccount(): ConnectedAccount | undefined {
+        return this.connectedAccounts.find(acc => acc.selected);
     }
 
     private async createNewAccount(wireName: string, address: string): Promise<void> {
