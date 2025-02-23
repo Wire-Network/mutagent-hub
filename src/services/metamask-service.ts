@@ -91,32 +91,6 @@ export class MetaMaskService {
         return `SIG_${prefix}_${sigWithoutPrefix}`;
     }
 
-    async createWireLink(username: string, address: string): Promise<void> {
-        try {
-            const nonce = new Date().getTime();
-            const message = `${address}${nonce}${username}`;
-            const messageHash = ethers.id(message);
-            
-            const ethSignature = await this.signMessage(messageHash);
-            const wireSignature = this.evmSigToWIRE(ethSignature);
-
-            await this.wireService.pushTransaction({
-                account: 'auth.msg',
-                name: 'createlink',
-                authorization: [{ actor: username, permission: 'active' }],
-                data: {
-                    sig: wireSignature,
-                    msg_hash: messageHash.slice(2),
-                    nonce: nonce,
-                    account_name: username,
-                }
-            });
-        } catch (error) {
-            console.error('Error creating WIRE link:', error);
-            throw error;
-        }
-    }
-
     private ethPubKeyToWirePubKey(ethPubKey: string, keyType = KeyType.EM): string {
         if (ethPubKey.startsWith('0x')) {
             ethPubKey = ethPubKey.slice(2);
@@ -145,18 +119,25 @@ export class MetaMaskService {
                     limit: 1
                 });
                 
+                // If account exists, return the name without trying to create it
                 if (result.rows.length > 0) {
-                    console.log('Account exists:', wireName);
+                    console.log('Account exists, using existing account:', wireName);
                     return wireName;
                 }
                 
-                // Account doesn't exist, create it
+                // Only create a new account if it doesn't exist
                 console.log('Account does not exist, creating:', wireName);
                 await this.createNewAccount(wireName, address);
                 return wireName;
-            } catch (err) {
-                console.error('Error checking account:', err);
-                throw err;
+            } catch (error) {
+                // If the error is not about account existence, throw it
+                if (!(error instanceof Error && error.message.includes('account_name_exists'))) {
+                    console.error('Error checking account:', error);
+                    throw error;
+                }
+                // If account exists (got the exists exception), just return the name
+                console.log('Account exists (caught from error), using existing account:', wireName);
+                return wireName;
             }
         } catch (error) {
             console.error('Error in checkAndCreateAccount:', error);
