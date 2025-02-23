@@ -6,7 +6,9 @@ export interface PersonaInfo {
 }
 
 export interface PersonaData {
+    id: string;
     name: string;
+    description: string;
     backstory: string;
     traits: string[];
     imageUrl: string;
