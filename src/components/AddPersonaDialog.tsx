@@ -1,4 +1,3 @@
-
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -34,11 +33,12 @@ export function AddPersonaDialog({ onPersonaAdded }: { onPersonaAdded?: () => vo
   const wireService = WireService.getInstance()
   const queryClient = useQueryClient()
   const pinataService = PinataService.getInstance()
-  const { generateAvatar } = usePersonaAvatar() // Move hook to component level
+  const { generateAvatar } = usePersonaAvatar()
 
   const generateRandomPersona = async () => {
     setIsGenerating(true)
     try {
+      console.log('Starting random persona generation...');
       const response = await fetch('https://api.venice.ai/api/v1/chat/completions', {
         method: 'POST',
         headers: {
@@ -63,13 +63,14 @@ Important: The name MUST be exactly 9 characters long using ONLY lowercase lette
       })
 
       if (!response.ok) {
+        console.error('Venice API error:', response.status, await response.text());
         throw new Error('Failed to generate persona')
       }
 
       const data = await response.json()
       const content = data.choices[0].message.content
       
-      console.log('AI Response:', content)
+      console.log('AI Raw Response:', content)
       
       // Parse the response
       const nameMatch = content.match(/Name:\s*([a-z1-5]{9})/i)
@@ -87,13 +88,8 @@ Important: The name MUST be exactly 9 characters long using ONLY lowercase lette
         setName(generatedName)
         validateName(generatedName)
       } else {
-        console.error('Failed to parse name from response')
-        toast({
-          variant: "destructive",
-          title: "Error",
-          description: "Failed to generate valid name, please try again",
-        })
-        return
+        console.error('Failed to parse name from response:', content)
+        throw new Error('Failed to generate valid name, please try again')
       }
 
       if (backstoryMatch && backstoryMatch[1]) {
@@ -112,12 +108,12 @@ Important: The name MUST be exactly 9 characters long using ONLY lowercase lette
         title: "Success",
         description: "Generated random persona!",
       })
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error generating persona:', error)
       toast({
         variant: "destructive",
         title: "Error",
-        description: "Failed to generate random persona",
+        description: error.message || "Failed to generate random persona",
       })
     } finally {
       setIsGenerating(false)
