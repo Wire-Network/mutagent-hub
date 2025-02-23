@@ -15,14 +15,19 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [privateKey, setPrivateKey] = useState<string | null>(null);
     const [accountName, setAccountName] = useState<string | null>(null);
+    const [isInitialized, setIsInitialized] = useState(false);
 
     useEffect(() => {
         // Check for stored credentials on mount
         const storedKey = localStorage.getItem('wire_private_key');
         const storedAccount = localStorage.getItem('wire_account_name');
+        
         if (storedKey && storedAccount) {
-            setCredentials(storedAccount, storedKey);
+            setPrivateKey(storedKey);
+            setAccountName(storedAccount);
         }
+        
+        setIsInitialized(true);
     }, []);
 
     const setCredentials = (account: string, key: string, isMetaMask: boolean = false) => {
@@ -49,6 +54,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setPrivateKey(null);
         setAccountName(null);
     };
+
+    // Don't render children until we've checked local storage
+    if (!isInitialized) {
+        return null; // or return a loading spinner
+    }
 
     return (
         <AuthContext.Provider 
