@@ -1,10 +1,11 @@
+
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { PrivateKey } from '@wireio/core';
 
 interface AuthContextType {
     privateKey: string | null;
     accountName: string | null;
-    setCredentials: (accountName: string, privateKey: string) => void;
+    setCredentials: (accountName: string, privateKey: string, isMetaMask?: boolean) => void;
     logout: () => void;
     isAuthenticated: boolean;
 }
@@ -14,20 +15,27 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
     const [privateKey, setPrivateKey] = useState<string | null>(null);
     const [accountName, setAccountName] = useState<string | null>(null);
+    const [isInitialized, setIsInitialized] = useState(false);
 
     useEffect(() => {
         // Check for stored credentials on mount
         const storedKey = localStorage.getItem('wire_private_key');
         const storedAccount = localStorage.getItem('wire_account_name');
+        
         if (storedKey && storedAccount) {
-            setCredentials(storedAccount, storedKey);
+            setPrivateKey(storedKey);
+            setAccountName(storedAccount);
         }
+        
+        setIsInitialized(true);
     }, []);
 
-    const setCredentials = (account: string, key: string) => {
+    const setCredentials = (account: string, key: string, isMetaMask: boolean = false) => {
         try {
-            // Validate the private key format
-            PrivateKey.from(key); // This will throw if invalid
+            // Only validate private key format for non-MetaMask credentials
+            if (!isMetaMask) {
+                PrivateKey.from(key); // This will throw if invalid
+            }
             
             // Store credentials
             localStorage.setItem('wire_private_key', key);
@@ -46,6 +54,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setPrivateKey(null);
         setAccountName(null);
     };
+
+    // Don't render children until we've checked local storage
+    if (!isInitialized) {
+        return null; // or return a loading spinner
+    }
 
     return (
         <AuthContext.Provider 
@@ -68,4 +81,4 @@ export function useAuth() {
         throw new Error('useAuth must be used within an AuthProvider');
     }
     return context;
-} 
+}

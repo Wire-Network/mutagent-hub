@@ -1,3 +1,4 @@
+
 import { PinataSDK } from 'pinata-web3';
 import config from '@/config';
 
@@ -42,20 +43,29 @@ export class PinataService {
 
     async getContent(cid: string): Promise<any> {
         try {
-            const data = await this.pinata.gateways.get(cid);
-            return data;
+            console.log('Fetching content from Pinata with CID:', cid);
+            const response = await this.pinata.gateways.get(cid);
+            console.log('Raw Pinata response:', JSON.stringify(response, null, 2));
+            
+            // If the response is already parsed JSON
+            if (response && typeof response === 'object') {
+                if ('metadata' in response && 'imageData' in response) {
+                    return response; // Return avatar data directly
+                } else if ('data' in response) {
+                    return response; // Return persona state data
+                }
+            }
+            
+            // If response is not in expected format, return as is
+            return response;
         } catch (error) {
             console.error('Error fetching from IPFS:', error);
-            if (error instanceof Error && error.message.includes('timeout')) {
-                throw new Error('IPFS request timed out');
-            }
-            throw new Error('Failed to fetch content from IPFS');
+            throw error;
         }
     }
 
     async isContentPinned(cid: string): Promise<boolean> {
         try {
-            // Use the gateway to check if content is available
             await this.pinata.gateways.get(cid);
             return true;
         } catch (error) {
