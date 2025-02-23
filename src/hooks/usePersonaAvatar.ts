@@ -66,7 +66,7 @@ export function usePersonaAvatar() {
             console.log('Generated prompt:', prompt);
 
             const options: GenerateAvatarOptions = {
-                model: "fluently-xl",
+                model: "stability-xl",
                 prompt,
                 height: 512,
                 width: 512,
@@ -77,6 +77,8 @@ export function usePersonaAvatar() {
 
             console.log('Making API request to Venice.ai with options:', options);
             console.log('Using API key:', config.venice.apiKey ? 'Present' : 'Missing');
+            
+            console.log('Venice API endpoint:', config.venice.endpoint || 'https://api.venice.ai/api/v1/image/generate');
 
             const response = await fetch('https://api.venice.ai/api/v1/image/generate', {
                 method: 'POST',
@@ -102,6 +104,9 @@ export function usePersonaAvatar() {
             });
 
             const imageBase64 = data.images[0];
+            if (!imageBase64) {
+                throw new Error('No image data received from Venice API');
+            }
 
             // Store in IPFS
             const avatarData = {
