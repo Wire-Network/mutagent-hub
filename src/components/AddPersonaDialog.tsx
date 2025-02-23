@@ -51,18 +51,25 @@ export function AddPersonaDialog({ onPersonaAdded }: { onPersonaAdded?: () => vo
           model: "llama-3.3-70b",
           messages: [{
             role: "system",
-            content: "You are a creative AI that generates unique, witty personas. Each time, pick a different notable figure from a broad range of categories (fiction and nonfiction). Do not repeat a figure such as 'charles darwin' if it has already been used."
+            content: "You are a creative AI that creates witty variations of famous or popular peoples/characters names. Each time, pick a different notable figure and create a unique variation of their name."
           }, {
             role: "user",
             content: `Create a unique AI persona by transforming the name of a famous or popular person/character into a creative variation.
-  
-  Format the response EXACTLY as follows:
-  
-  Name: [Transform the name of any famous person (from fiction: TV, movies, comics, graphic novels, books, memes; or nonfiction: famous scientists, philosophers, artists, writers, historical leaders) into a creative, witty version. Use only lowercase letters a-z and numbers 1-5, maximum 9 characters.]
-  
-  Backstory: [Write 2-3 sentences about the chosen figure’s achievements with an AI twist.]
-  
-  Traits: [List exactly 3 real traits of the person, comma-separated, no period at end]`
+
+Format the response EXACTLY as follows:
+
+Name: [Transform the name of any famous people (from fiction or nonfiction) following these rules:
+1. Use ONLY lowercase letters a-z and numbers 1-5
+2. Keep it recognizable but creative
+3. Maximum 9 characters
+4. Choose someone from these categories: 
+          -fiction: tv, movies, comics/graphic novels, books, memes
+          -nonfiction: famous scientists, philosophers, artists, writers, or historical leaders
+5. Make it witty and memorable, but ensure people can guess who it references]
+
+Backstory: [2-3 sentences about the chosen figure's actual achievements with an AI twist.]
+
+Traits: [List exactly 3 real traits of person/character, comma-separated, no period at end]`
           }],
           temperature: 0.9,
           presence_penalty: 0.8,
