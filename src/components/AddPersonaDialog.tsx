@@ -51,30 +51,32 @@ export function AddPersonaDialog({ onPersonaAdded }: { onPersonaAdded?: () => vo
           model: "llama-3.3-70b",
           messages: [{
             role: "system",
-            content: "You are a creative AI that specializes in generating witty, memorable character names based on historical figures, pop culture, and clever wordplay. You excel at creating names that are both recognizable and unique."
+            content: "You are a creative AI that creates witty names by directly referencing famous figures and icons. ALWAYS use the exact name of the person/character as your base, just modified with numbers. Example: einstein -> einst3in1, shakespeare -> shak3spr, davinci -> davinci2."
           }, {
             role: "user",
-            content: `Create an AI persona by crafting a clever name that plays on famous historical figures, pop culture icons, or well-known concepts. Make it witty and memorable.
+            content: `Create an AI persona by taking a DIRECT famous name and modifying it slightly. DO NOT create new characters or interpretations.
 
-Format the response EXACTLY as follows (the name format is strict and must be followed):
+Format the response EXACTLY as follows:
 
-Name: [Create a clever 9-character name that's a play on words or reference to:
-- Historical figures (e.g., socrat3s, aristotl3)
-- Scientists/inventors (e.g., tesla123, edison15)
-- Pop culture icons (e.g., chaplain2)
-- Literary characters (e.g., sherlock1)
-- Mythological figures (e.g., zeus1234)
-Use only lowercase letters a-z and numbers 1-5. The .ai suffix will be added automatically.]
+Name: [Take a famous person's name and modify it by:
+1. Using ONLY lowercase letters a-z and numbers 1-5
+2. Keeping it recognizable (e.g., 'einst3in1' for Einstein, 'plat0123' for Plato)
+3. Maximum 9 characters
+Choose from these categories ONLY:
+- Scientists: Einstein, Tesla, Newton, Darwin
+- Philosophers: Plato, Aristotle, Socrates
+- Artists: Picasso, DaVinci, VanGogh
+- Writers: Shakespeare, Hemingway, Tolkien
+- Historical leaders: Caesar, Napoleon, Cleopatra
+Do NOT create original characters or adaptations - use the actual names!]
 
-Backstory: [Write 2-3 sentences that tie into the name's origin while creating a unique spin. If the name references a historical figure or character, create an AI twist on their story.]
+Backstory: [2-3 sentences updating the ACTUAL historical figure's story with an AI twist. Reference their real achievements.]
 
-Traits: [List exactly 3 personality traits that reflect both the original reference and the AI adaptation, comma-separated, no period at the end]
-
-Important: The name MUST be at most 9 characters using ONLY lowercase letters and numbers 1-5 (no dots or special characters). Make sure the name is recognizable enough that users can guess its inspiration.`
+Traits: [List exactly 3 personality traits from the actual historical figure, comma-separated, no period at end]`
           }],
-          temperature: 0.9,
-          presence_penalty: 1.0,
-          frequency_penalty: 1.0,
+          temperature: 0.7,
+          presence_penalty: 0.5,
+          frequency_penalty: 0.5,
         })
       })
 
@@ -88,13 +90,13 @@ Important: The name MUST be at most 9 characters using ONLY lowercase letters an
       
       console.log('AI Raw Response:', content)
       
-      const nameMatch = content.match(/Name:\s*([a-z1-5]{9})/i)
+      const nameMatch = content.match(/Name:[\s\n]*([a-z1-5]{1,9})/i)
       console.log('Name match:', nameMatch)
       
-      const backstoryMatch = content.match(/Backstory:\s*(.*?)(?=\nTraits:|$)/s)
+      const backstoryMatch = content.match(/Backstory:[\s\n]*(.*?)(?=\nTraits:|$)/s)
       console.log('Backstory match:', backstoryMatch)
       
-      const traitsMatch = content.match(/Traits:\s*(.*?)(?=\n|$)/s)
+      const traitsMatch = content.match(/Traits:[\s\n]*(.*?)(?=\n|$)/s)
       console.log('Traits match:', traitsMatch)
 
       if (nameMatch && nameMatch[1]) {
