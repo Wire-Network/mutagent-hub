@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { ArrowLeft } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -19,20 +20,31 @@ export const ChatHeader = ({ personaName, onBack, onAvatarClick }: ChatHeaderPro
 
     useEffect(() => {
         const loadAvatar = async () => {
-            if (!isReady) return;
+            console.log('Starting avatar load process for:', personaName);
+            
+            if (!isReady) {
+                console.log('Content service not ready yet');
+                return;
+            }
 
             try {
                 const personaInfo = await getPersonaInfo(personaName);
-                if (!personaInfo?.initial_state_cid) return;
+                if (!personaInfo?.initial_state_cid) {
+                    console.log('No initial state CID found');
+                    return;
+                }
 
                 const stateData = await getContent(personaInfo.initial_state_cid);
                 
-                // If we have a stored avatar CID, use it
-                if (stateData.data.avatar_cid) {
+                if (stateData.data?.avatar_cid) {
                     try {
                         const avatarData = await getContent(stateData.data.avatar_cid);
-                        if (avatarData?.imageData) {
-                            setAvatarUrl(`data:image/png;base64,${avatarData.imageData}`);
+                        console.log('Avatar data received:', avatarData);
+                        
+                        if (avatarData.data?.imageData) {
+                            const imageData = avatarData.data.imageData;
+                            console.log('Setting avatar URL from image data');
+                            setAvatarUrl(`data:image/png;base64,${imageData}`);
                             return;
                         }
                     } catch (error) {
@@ -40,10 +52,10 @@ export const ChatHeader = ({ personaName, onBack, onAvatarClick }: ChatHeaderPro
                     }
                 }
 
-                // Fallback to placeholder if no avatar is found
                 setAvatarUrl("/placeholder.svg");
             } catch (error) {
-                console.error('Error loading avatar:', error);
+                console.error('Error in avatar load process:', error);
+                setAvatarUrl("/placeholder.svg");
             }
         };
 
@@ -51,7 +63,7 @@ export const ChatHeader = ({ personaName, onBack, onAvatarClick }: ChatHeaderPro
     }, [personaName, isReady, getPersonaInfo, getContent]);
 
     return (
-        <div className="p-4 border-b">
+        <div className="p-4 border-b border-primary/20">
             <div className="flex items-center gap-4">
                 <Button
                     variant="ghost"
@@ -66,10 +78,10 @@ export const ChatHeader = ({ personaName, onBack, onAvatarClick }: ChatHeaderPro
                     Chat with {personaName}
                 </h1>
                 <div className="ml-auto">
-                    <Button
+                    <Button 
                         variant="ghost"
                         size="icon"
-                        className="w-12 h-12 rounded-full p-0 overflow-hidden"
+                        className="w-12 h-12 rounded-full p-0 overflow-hidden border border-primary/20 hover:border-primary/40 transition-colors"
                         onClick={onAvatarClick}
                     >
                         <img
