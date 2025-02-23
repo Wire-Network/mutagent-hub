@@ -48,17 +48,22 @@ export function AddPersonaDialog({ onPersonaAdded }: { onPersonaAdded?: () => vo
         body: JSON.stringify({
           model: "llama-3.3-70b",
           messages: [{
+            role: "system",
+            content: "You are a creative AI that generates diverse and unique character personas. Avoid using obvious or common characters. Be original and surprising with your choices."
+          }, {
             role: "user",
-            content: `Create an AI persona based on a famous character from movies, books, TV shows, history, or music.
+            content: `Create an AI persona based on a completely random character archetype - avoid obvious choices like detectives or common characters.
 Format the response EXACTLY as follows (the name format is strict and must be followed):
 
-Name: [Create a recognizable 9-character name based on a famous character or personality. Use only lowercase letters a-z and numbers 1-5 (no dots). The .ai suffix will be added automatically.]
+Name: [Create a unique 9-character name based on the character's role or nature. Use only lowercase letters a-z and numbers 1-5 (no dots). The .ai suffix will be added automatically.]
 Backstory: [Write 2-3 sentences about the character's background and motivations WITHOUT mentioning any names. Focus on their role, achievements, and unique characteristics.]
 Traits: [List exactly 3 personality traits, comma-separated, no period at the end]
 
 Important: The name MUST be exactly 9 characters long using ONLY lowercase letters and numbers 1-5 (no dots or special characters).`
           }],
-          temperature: 0.7
+          temperature: 0.9,
+          presence_penalty: 1.0,
+          frequency_penalty: 1.0,
         })
       })
 
@@ -72,7 +77,6 @@ Important: The name MUST be exactly 9 characters long using ONLY lowercase lette
       
       console.log('AI Raw Response:', content)
       
-      // Parse the response
       const nameMatch = content.match(/Name:\s*([a-z1-5]{9})/i)
       console.log('Name match:', nameMatch)
       
@@ -168,12 +172,10 @@ Important: The name MUST be exactly 9 characters long using ONLY lowercase lette
     try {
       console.log('Starting persona creation process...')
       
-      // Generate avatar
       const avatarBase64 = await generateAvatar(name, backstory)
       let avatarCid = null
 
       if (avatarBase64) {
-        // Store avatar in IPFS
         const avatarData = {
           imageData: avatarBase64,
           metadata: {
@@ -186,10 +188,8 @@ Important: The name MUST be exactly 9 characters long using ONLY lowercase lette
         console.log('Avatar stored in IPFS with CID:', avatarCid)
       }
 
-      // Format traits into array
       const traitArray = traits.split(',').map(t => t.trim()).filter(t => t)
       
-      // Create initial state message with avatar CID
       const message = {
         text: backstory,
         timestamp: new Date().toISOString(),
