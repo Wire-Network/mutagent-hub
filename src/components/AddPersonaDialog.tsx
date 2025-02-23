@@ -279,7 +279,6 @@ Important: The name MUST be exactly 9 characters long using ONLY lowercase lette
                   className={cn(
                     "absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground",
                     "transition-all duration-300 group-hover:text-primary",
-                    "after:content-['.ai'] after:animate-fade-in",
                     displayName ? "opacity-100 translate-x-0" : "opacity-0 translate-x-2"
                   )}
                 >
