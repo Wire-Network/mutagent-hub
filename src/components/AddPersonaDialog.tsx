@@ -19,10 +19,12 @@ import config from "@/config"
 import { useQueryClient } from '@tanstack/react-query'
 import { usePersonaAvatar } from "@/hooks/usePersonaAvatar"
 import { PinataService } from "@/services/pinata-service"
+import { cn } from "@/lib/utils"
 
 export function AddPersonaDialog({ onPersonaAdded }: { onPersonaAdded?: () => void }) {
   const [open, setOpen] = useState(false)
   const [name, setName] = useState("")
+  const [displayName, setDisplayName] = useState("")
   const [nameError, setNameError] = useState("")
   const [backstory, setBackstory] = useState("")
   const [traits, setTraits] = useState("")
@@ -87,9 +89,10 @@ Important: The name MUST be exactly 9 characters long using ONLY lowercase lette
       console.log('Traits match:', traitsMatch)
 
       if (nameMatch && nameMatch[1]) {
-        const generatedName = nameMatch[1].toLowerCase() + '.ai'
+        const generatedName = nameMatch[1].toLowerCase()
         console.log('Setting name to:', generatedName)
         setName(generatedName)
+        setDisplayName(generatedName)
         validateName(generatedName)
       } else {
         console.error('Failed to parse name from response:', content)
@@ -126,11 +129,7 @@ Important: The name MUST be exactly 9 characters long using ONLY lowercase lette
 
   const validateName = (value: string) => {
     setNameError("")
-    if (!value.endsWith('.ai')) {
-      setNameError("Name must end with .ai")
-      return false
-    }
-    const baseName = value.slice(0, -3)
+    const baseName = value.endsWith('.ai') ? value.slice(0, -3) : value
     if (baseName.length > 9) {
       setNameError("Name must be at most 9 characters (excluding .ai)")
       return false
@@ -144,13 +143,16 @@ Important: The name MUST be exactly 9 characters long using ONLY lowercase lette
 
   const handleNameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value.toLowerCase()
-    setName(value)
-    validateName(value)
+    const baseName = value.endsWith('.ai') ? value.slice(0, -3) : value
+    setDisplayName(baseName)
+    setName(baseName)
+    validateName(baseName)
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
+    const fullName = `${name}.ai`
     if (!validateName(name)) {
       return
     }
@@ -168,7 +170,7 @@ Important: The name MUST be exactly 9 characters long using ONLY lowercase lette
     try {
       console.log('Starting persona creation process...')
       
-      const avatarBase64 = await generateAvatar(name, backstory)
+      const avatarBase64 = await generateAvatar(fullName, backstory)
       let avatarCid = null
 
       if (avatarBase64) {
@@ -176,7 +178,7 @@ Important: The name MUST be exactly 9 characters long using ONLY lowercase lette
           imageData: avatarBase64,
           metadata: {
             version: 1,
-            personaName: name,
+            personaName: fullName,
             timestamp: new Date().toISOString()
           }
         }
@@ -189,7 +191,7 @@ Important: The name MUST be exactly 9 characters long using ONLY lowercase lette
       const message = {
         text: backstory,
         timestamp: new Date().toISOString(),
-        persona: name,
+        persona: fullName,
         traits: traitArray,
         avatar_cid: avatarCid
       }
@@ -200,7 +202,7 @@ Important: The name MUST be exactly 9 characters long using ONLY lowercase lette
 
       console.log('Creating persona account and deploying contract')
       const result = await wireService.addPersona(
-        name.toLowerCase(),
+        fullName,
         backstory,
         initialStateCid
       )
@@ -214,6 +216,7 @@ Important: The name MUST be exactly 9 characters long using ONLY lowercase lette
 
       onPersonaAdded?.()
       setOpen(false)
+      setDisplayName("")
       setName("")
       setBackstory("")
       setTraits("")
@@ -258,21 +261,29 @@ Important: The name MUST be exactly 9 characters long using ONLY lowercase lette
           <div className="grid gap-4 py-4">
             <div className="grid gap-2">
               <label htmlFor="name">Name</label>
-              <Input
-                id="name"
-                value={name}
-                onChange={handleNameChange}
-                placeholder="e.g. starkbot15.ai"
-                required
-                className={nameError ? "border-red-500" : ""}
-                pattern="[a-z1-5]{1,9}\.ai"
-                title="Must be up to 9 characters using only lowercase letters and numbers 1-5, followed by .ai"
-              />
+              <div className="relative">
+                <Input
+                  id="name"
+                  value={displayName}
+                  onChange={handleNameChange}
+                  placeholder="e.g. starkbot15"
+                  required
+                  className={cn(
+                    nameError ? "border-red-500" : "",
+                    "pr-8"
+                  )}
+                  pattern="[a-z1-5]{1,9}"
+                  title="Must be up to 9 characters using only lowercase letters and numbers 1-5"
+                />
+                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                  .ai
+                </span>
+              </div>
               {nameError && (
                 <p className="text-sm text-red-500">{nameError}</p>
               )}
               <p className="text-sm text-muted-foreground">
-                Must be up to 9 characters using only lowercase letters and numbers 1-5, followed by .ai
+                Must be up to 9 characters using only lowercase letters and numbers 1-5
               </p>
             </div>
             <div className="grid gap-2">
