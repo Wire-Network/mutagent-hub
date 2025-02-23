@@ -11,6 +11,21 @@ interface ConnectedAccount {
     username: string;
 }
 
+// Define proper types for ethereum provider events
+interface EthereumProvider {
+    on(event: 'accountsChanged', handler: (accounts: string[]) => void): void;
+    on(event: 'chainChanged', handler: (chainId: string) => void): void;
+    on(event: 'disconnect', handler: (error: { code: number; message: string }) => void): void;
+    request(args: { method: string; params?: any[] }): Promise<any>;
+}
+
+// Extend Window interface to include ethereum property
+declare global {
+    interface Window {
+        ethereum?: EthereumProvider;
+    }
+}
+
 export class MetaMaskService {
     private static instance: MetaMaskService;
     private provider: ethers.BrowserProvider | null = null;
@@ -49,17 +64,15 @@ export class MetaMaskService {
         if (typeof window !== 'undefined' && window.ethereum) {
             this.provider = new ethers.BrowserProvider(window.ethereum);
             
-            // Use proper typing for each event handler
             window.ethereum.on('accountsChanged', (accounts: string[]) => {
                 this.handleAccountsChanged(accounts);
             });
 
-            window.ethereum.on('chainChanged', (_chainId: string) => {
-                // Handle chain change by reloading the page
+            window.ethereum.on('chainChanged', (chainId: string) => {
                 window.location.reload();
             });
 
-            window.ethereum.on('disconnect', (_error: { code: number; message: string }) => {
+            window.ethereum.on('disconnect', (error: { code: number; message: string }) => {
                 this.handleDisconnect();
             });
         }
