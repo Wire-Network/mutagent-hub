@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -33,6 +34,7 @@ export function AddPersonaDialog({ onPersonaAdded }: { onPersonaAdded?: () => vo
   const wireService = WireService.getInstance()
   const queryClient = useQueryClient()
   const pinataService = PinataService.getInstance()
+  const { generateAvatar } = usePersonaAvatar() // Move hook to component level
 
   const generateRandomPersona = async () => {
     setIsGenerating(true)
@@ -54,26 +56,7 @@ Name: [Create a recognizable 9-character name based on a famous character or per
 Backstory: [Write 2-3 sentences about the character's background and motivations WITHOUT mentioning any names. Focus on their role, achievements, and unique characteristics.]
 Traits: [List exactly 3 personality traits, comma-separated, no period at the end]
 
-Important: The name MUST be exactly 9 characters long using ONLY lowercase letters and numbers 1-5 (no dots or special characters).
-Examples of good character-based names:
-- starkbot15 (Iron Man)
-- sherlock15 (Sherlock Holmes)
-- batmanbot5 (Batman)
-- jedimind15 (Star Wars)
-- thorgod451 (Thor)
-
-Example format:
-Name: starkbot15
-Backstory: A brilliant inventor and billionaire who created advanced technology to protect the world. After a life-changing incident, dedicated their existence to fighting evil using cutting-edge robotic suits and artificial intelligence.
-Traits: genius inventor, charismatic leader, determined hero
-
-Remember: 
-- Name must be AT MOST 9 characters
-- Only use lowercase letters a-z and numbers 1-5
-- NO dots or special characters (the .ai will be added automatically)
-- Make it recognizable based on the character
-- Do NOT mention character names in the backstory
-- Traits must be exactly 3, comma-separated`
+Important: The name MUST be exactly 9 characters long using ONLY lowercase letters and numbers 1-5 (no dots or special characters).`
           }],
           temperature: 0.7
         })
@@ -142,36 +125,24 @@ Remember:
   }
 
   const validateName = (value: string) => {
-    // Reset error
     setNameError("")
-    
-    // Check if name ends with .ai
     if (!value.endsWith('.ai')) {
       setNameError("Name must end with .ai")
       return false
     }
-
-    // Get the base name (without .ai)
     const baseName = value.slice(0, -3)
-    
-    // Check base name length (must be exactly 9 characters)
     if (baseName.length !== 9) {
       setNameError("Name must be exactly 9 characters (excluding .ai)")
       return false
     }
-
-    // Check for valid characters (only lowercase a-z and numbers 1-5)
     if (!/^[a-z1-5]+$/.test(baseName)) {
       setNameError("Only lowercase letters a-z and numbers 1-5 are allowed")
       return false
     }
-
-    // Check total length (must be exactly 12 characters including .ai)
     if (value.length !== 12) {
       setNameError("Total name length must be exactly 12 characters")
       return false
     }
-
     return true
   }
 
@@ -182,95 +153,89 @@ Remember:
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+    e.preventDefault()
     
     if (!validateName(name)) {
-        return;
+      return
     }
 
     if (!isReady) {
-        toast({
-            variant: "destructive",
-            title: "Error",
-            description: "IPFS is not initialized yet. Please try again in a moment.",
-        })
-        return;
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "IPFS is not initialized yet. Please try again in a moment.",
+      })
+      return
     }
 
-    setIsLoading(true);
+    setIsLoading(true)
     try {
-        console.log('Starting persona creation process...');
-        
-        // Generate avatar first
-        const { generateAvatar } = usePersonaAvatar();
-        const avatarBase64 = await generateAvatar(name, backstory);
-        let avatarCid = null;
+      console.log('Starting persona creation process...')
+      
+      // Generate avatar
+      const avatarBase64 = await generateAvatar(name, backstory)
+      let avatarCid = null
 
-        if (avatarBase64) {
-            // Store avatar in IPFS
-            const avatarData = {
-                imageData: avatarBase64,
-                metadata: {
-                    version: 1,
-                    personaName: name,
-                    timestamp: new Date().toISOString()
-                }
-            };
-            avatarCid = await pinataService.uploadJSON(avatarData);
-            console.log('Avatar stored in IPFS with CID:', avatarCid);
+      if (avatarBase64) {
+        // Store avatar in IPFS
+        const avatarData = {
+          imageData: avatarBase64,
+          metadata: {
+            version: 1,
+            personaName: name,
+            timestamp: new Date().toISOString()
+          }
         }
+        avatarCid = await pinataService.uploadJSON(avatarData)
+        console.log('Avatar stored in IPFS with CID:', avatarCid)
+      }
 
-        // Format traits into array
-        const traitArray = traits.split(',').map(t => t.trim()).filter(t => t);
-        
-        // Create initial state message with avatar CID
-        const message = {
-            text: backstory,
-            timestamp: new Date().toISOString(),
-            persona: name,
-            traits: traitArray,
-            avatar_cid: avatarCid // Store the avatar CID in the initial state
-        };
+      // Format traits into array
+      const traitArray = traits.split(',').map(t => t.trim()).filter(t => t)
+      
+      // Create initial state message with avatar CID
+      const message = {
+        text: backstory,
+        timestamp: new Date().toISOString(),
+        persona: name,
+        traits: traitArray,
+        avatar_cid: avatarCid
+      }
 
-        console.log('Uploading initial state to IPFS:', message);
-        const initialStateCid = await uploadContent(message);
-        console.log('Initial state uploaded to IPFS with CID:', initialStateCid);
+      console.log('Uploading initial state to IPFS:', message)
+      const initialStateCid = await uploadContent(message)
+      console.log('Initial state uploaded to IPFS with CID:', initialStateCid)
 
-        console.log('Creating persona account and deploying contract');
-        const result = await wireService.addPersona(
-            name.toLowerCase(),
-            backstory,
-            initialStateCid
-        );
-        
-        console.log('Persona creation complete:', {
-            name: name.toLowerCase(),
-            initialStateCid,
-            deployResult: result.deployResult,
-            initResponse: result.initResponse
-        });
+      console.log('Creating persona account and deploying contract')
+      const result = await wireService.addPersona(
+        name.toLowerCase(),
+        backstory,
+        initialStateCid
+      )
+      
+      console.log('Persona creation complete:', result)
 
-        toast({
-            title: "Success",
-            description: "Persona created successfully!",
-        });
+      toast({
+        title: "Success",
+        description: "Persona created successfully!",
+      })
 
-        onPersonaAdded?.();
-        setOpen(false);
-        setName("");
-        setBackstory("");
-        setTraits("");
+      onPersonaAdded?.()
+      setOpen(false)
+      setName("")
+      setBackstory("")
+      setTraits("")
     } catch (error: any) {
-        console.error('Error creating persona:', error);
-        toast({
-            variant: "destructive",
-            title: "Error",
-            description: error.message || "Failed to create persona",
-        });
+      console.error('Error creating persona:', error)
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: error.message || "Failed to create persona",
+      })
     } finally {
-        setIsLoading(false);
+      setIsLoading(false)
     }
-};
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
