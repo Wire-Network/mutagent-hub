@@ -283,7 +283,7 @@ Important: The name MUST be exactly 9 characters long using ONLY lowercase lette
                 onChange={(e) => setBackstory(e.target.value)}
                 placeholder="Tell us about this character's background..."
                 required
-                className="input-cyber w-full"
+                className="min-h-[100px] resize-none"
               />
             </div>
             <div className="grid gap-2">
