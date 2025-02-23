@@ -73,14 +73,19 @@ const Login = () => {
             localStorage.setItem('metamask_signature', signature);
             localStorage.setItem('metamask_address', address);
             localStorage.setItem('wire_account', wireName);
+
+            // Update auth context
+            await setCredentials(wireName, signature);
             
             toast({
                 title: "Success",
                 description: `Successfully connected with MetaMask! WIRE account: ${wireName}`,
             });
             
-            navigate('/');
+            // Force navigation after successful auth
+            navigate('/', { replace: true });
         } catch (error) {
+            console.error('MetaMask login error:', error);
             toast({
                 variant: "destructive",
                 title: "Error",
