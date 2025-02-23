@@ -1,10 +1,8 @@
-
 import { useState } from 'react'
 import { PinataService } from '@/services/pinata-service'
-import { PersonaData } from '@/types/persona'
 
 export function usePersonaContent() {
-  const [isReady] = useState(true)
+  const [isReady] = useState(true) // Always ready since we're just using Pinata
   const pinataService = PinataService.getInstance()
 
   const uploadContent = async (content: any) => {
@@ -29,24 +27,9 @@ export function usePersonaContent() {
     }
   }
 
-  const getPersonas = async (): Promise<PersonaData[]> => {
-    // This is a placeholder implementation - replace with actual data fetching
-    return [
-      {
-        id: '1',
-        name: 'Example Persona',
-        description: 'An example persona description',
-        backstory: 'Example backstory',
-        traits: ['friendly', 'helpful'],
-        imageUrl: '/placeholder.svg'
-      }
-    ]
-  }
-
   return {
     isReady,
     uploadContent,
-    getContent,
-    getPersonas
+    getContent
   }
-}
+} 
