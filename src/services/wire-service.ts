@@ -169,9 +169,9 @@ export class WireService {
             data: {
                 owner: personaName,
                 issuer: "nodeowner1",
-                net_weight: "0.0300 SYS",
-                cpu_weight: "0.0300 SYS",
-                ram_weight: "0.0030 SYS",
+                net_weight: "0.5000 SYS",
+                cpu_weight: "0.5000 SYS",
+                ram_weight: "1.0000 SYS",
                 time_block: 1,
                 network_gen: 0
             },
@@ -238,6 +238,7 @@ export class WireService {
         preStateCid: string,
         messageCid: string,
         fullConvoHistoryCid: string,
+        isWalletAuth?: boolean
     ) {
         const action = {
             account: personaName,
@@ -252,11 +253,17 @@ export class WireService {
                 account_name: userAccount,
                 pre_state_cid: preStateCid,
                 msg_cid: messageCid,
-                full_convo_history_cid: messageCid,
+                full_convo_history_cid: fullConvoHistoryCid,
             },
         };
 
-        return this.pushTransaction(action);
+        if (isWalletAuth) {
+            // Get EthereumService instance and use it to sign and push
+            const ethService = (await import('./ethereum-service')).EthereumService.getInstance();
+            return ethService.signAndPushTransaction(action);
+        } else {
+            return this.pushTransaction(action);
+        }
     }
 
     async getPersonas(): Promise<any[]> {
@@ -340,5 +347,44 @@ export class WireService {
             console.error('Account verification error:', error);
             return false;
         }
+    }
+
+    async getChainInfo(): Promise<API.v1.GetInfoResponse> {
+        return wire.v1.chain.get_info();
+    }
+
+    async createTransaction(action: AnyAction | AnyAction[]): Promise<Transaction> {
+        const actions = await this.anyToAction(action);
+        const info = await wire.v1.chain.get_info();
+        const header = info.getTransactionHeader();
+        return Transaction.from({ ...header, actions });
+    }
+
+    async pushSignedTransaction(transaction: Transaction, signatures: string[]): Promise<API.v1.PushTransactionResponse> {
+        const signedTrx = SignedTransaction.from({ ...transaction, signatures });
+        return wire.v1.chain.push_transaction(signedTrx);
+    }
+
+    async register(username: string, publicKey: string): Promise<void> {
+        // This would typically call your backend registration endpoint
+        const response = await fetch(`${config.wire.endpoint}/register`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                username,
+                public_key: publicKey,
+            }),
+        });
+
+        if (!response.ok) {
+            const error = await response.json();
+            throw new Error(error.message || 'Failed to register account');
+        }
+    }
+
+    async getAccount(accountName: string): Promise<API.v1.AccountObject> {
+        return wire.v1.chain.get_account(accountName);
     }
 }

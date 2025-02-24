@@ -2,6 +2,7 @@ import { useState, useCallback } from 'react';
 import { WireService } from '../services/wire-service';
 import { useToast } from '@/components/ui/use-toast';
 import { PersonaInfo, RawPersona } from '@/types/persona';
+import { useAuth } from '@/contexts/AuthContext';
 
 export interface Persona {
     persona_name: string;
@@ -26,6 +27,7 @@ export function useWire() {
     const { toast } = useToast();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const { isWalletAuth } = useAuth();
 
     const handleError = useCallback((e: any) => {
         const message = e.details?.[0]?.message || e.message || 'An error occurred';
@@ -81,7 +83,8 @@ export function useWire() {
                 userAccount,
                 preStateCid,
                 messageCid,
-                fullConvoHistoryCid
+                fullConvoHistoryCid,
+                isWalletAuth
             );
             return result;
         } catch (e) {
@@ -90,7 +93,7 @@ export function useWire() {
         } finally {
             setLoading(false);
         }
-    }, [handleError]);
+    }, [handleError, isWalletAuth]);
 
     return {
         loading,

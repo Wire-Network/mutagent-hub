@@ -1,14 +1,14 @@
-
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "@/contexts/AuthContext";
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
-import { useState } from "react";
+import { useAuth } from "@/contexts/AuthContext";
 import { WireService } from "@/services/wire-service";
-import { MetaMaskService } from "@/services/metamask-service";
-import { Wallet } from "lucide-react";
+import { EthereumService } from "@/services/ethereum-service";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+// Import your logo. Adjust the path as needed.
+import mutagentLogo from "@/assets/mutagent-lg.png";
 
 const Login = () => {
     const [accountName, setAccountName] = useState("");
@@ -18,7 +18,7 @@ const Login = () => {
     const { toast } = useToast();
     const navigate = useNavigate();
     const wireService = WireService.getInstance();
-    const metamaskService = MetaMaskService.getInstance();
+    const ethereumService = EthereumService.getInstance();
 
     useEffect(() => {
         if (isAuthenticated) {
@@ -26,7 +26,7 @@ const Login = () => {
         }
     }, [isAuthenticated, navigate]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
+    const handlePrivateKeySubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setIsLoading(true);
 
@@ -57,113 +57,127 @@ const Login = () => {
         }
     };
 
-    const handleMetaMaskLogin = async () => {
+    const handleWalletLogin = async () => {
         setIsLoading(true);
         try {
-            // Request permission to connect and select account
-            const address = await metamaskService.connectWallet(true);
+            // Connect wallet
+            const account = await ethereumService.connectWallet();
             
-            // Check if account exists or create new one
-            const wireName = await metamaskService.checkAndCreateAccount(address);
+            // Check if account exists on WIRE
+            const exists = await ethereumService.verifyAccount(account.address);
             
-            // Sign login message
-            const message = `Login to WIRE with account: ${wireName}`;
-            const signature = await metamaskService.signMessage(message);
-            
-            // Store authentication data
-            localStorage.setItem('metamask_signature', signature);
-            localStorage.setItem('metamask_address', address);
-            localStorage.setItem('wire_account', wireName);
+            if (!exists) {
+                // Create new account if it doesn't exist
+                await ethereumService.createWireAccount(account.address);
+                toast({
+                    title: "Account Created",
+                    description: "Your WIRE account has been created successfully!",
+                });
+            }
 
-            // Update auth context with MetaMask flag
-            await setCredentials(wireName, signature, true);
+            // Set credentials (we don't store private key for wallet login)
+            await setCredentials(account.username, "");
             
             toast({
                 title: "Success",
-                description: `Successfully connected with MetaMask! WIRE account: ${wireName}`,
+                description: "Successfully connected with wallet!",
             });
-            
-            navigate('/', { replace: true });
+            navigate('/');
         } catch (error) {
-            console.error('MetaMask login error:', error);
             toast({
                 variant: "destructive",
                 title: "Error",
-                description: error instanceof Error ? error.message : "Failed to connect with MetaMask",
+                description: error instanceof Error ? error.message : "Failed to connect wallet",
             });
+            ethereumService.disconnect();
         } finally {
             setIsLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-background">
-            <div className="w-full max-w-md space-y-8 p-8 bg-card rounded-lg shadow-lg">
+        <div className="flex min-h-screen items-center justify-center bg-background">
+            <div className="w-full max-w-md space-y-8 px-4">
                 <div className="text-center">
-                    <h2 className="text-3xl font-bold">Welcome Back</h2>
-                    <p className="mt-2 text-muted-foreground">
-                        Please sign in to continue
+                    {/* Logo added above the title */}
+                    <img 
+                        src={mutagentLogo} 
+                        alt="Mutagent Logo" 
+                        className="mx-auto mb-4 h-56 w-auto" 
+                    />
+                    <h2 className="mt-6 text-3xl font-bold tracking-tight">
+                        Welcome to Mutagent
+                    </h2>
+                    <p className="mt-2 text-sm text-muted-foreground">
+                        Sign in to your account
                     </p>
                 </div>
 
-                <div className="mt-8 space-y-6">
-                    <Button
-                        onClick={handleMetaMaskLogin}
-                        className="w-full cyber-button"
-                        disabled={isLoading}
-                    >
-                        <Wallet className="mr-2 h-4 w-4" />
-                        {isLoading ? "Connecting..." : "Connect with MetaMask"}
-                    </Button>
+                <Tabs defaultValue="wallet" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                        <TabsTrigger value="wallet">Wallet</TabsTrigger>
+                        <TabsTrigger value="private-key">Private Key</TabsTrigger>
+                    </TabsList>
 
-                    <div className="relative">
-                        <div className="absolute inset-0 flex items-center">
-                            <span className="w-full border-t" />
+                    <TabsContent value="wallet">
+                        <div className="mt-8 space-y-6">
+                            <Button
+                                onClick={handleWalletLogin}
+                                className="w-full"
+                                disabled={isLoading}
+                            >
+                                {isLoading ? "Connecting..." : "Connect Wallet"}
+                            </Button>
                         </div>
-                        <div className="relative flex justify-center text-xs uppercase">
-                            <span className="bg-background px-2 text-muted-foreground">
-                                Or continue with
-                            </span>
-                        </div>
-                    </div>
+                    </TabsContent>
 
-                    <form onSubmit={handleSubmit} className="space-y-6">
-                        <div>
-                            <label htmlFor="accountName" className="block text-sm font-medium mb-2">
-                                Account Name
-                            </label>
-                            <Input
-                                id="accountName"
-                                value={accountName}
-                                onChange={(e) => setAccountName(e.target.value)}
-                                placeholder="e.g. nodeowner1"
-                                required
-                            />
-                        </div>
+                    <TabsContent value="private-key">
+                        <form className="mt-8 space-y-6" onSubmit={handlePrivateKeySubmit}>
+                            <div className="space-y-4 rounded-md shadow-sm">
+                                <div>
+                                    <label htmlFor="account-name" className="sr-only">
+                                        Account Name
+                                    </label>
+                                    <Input
+                                        id="account-name"
+                                        name="account"
+                                        type="text"
+                                        required
+                                        value={accountName}
+                                        onChange={(e) => setAccountName(e.target.value)}
+                                        placeholder="Account Name"
+                                        className="appearance-none rounded-md relative block w-full px-3 py-2 border border-muted placeholder-muted-foreground focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                                    />
+                                </div>
+                                <div>
+                                    <label htmlFor="private-key" className="sr-only">
+                                        Private Key
+                                    </label>
+                                    <Input
+                                        id="private-key"
+                                        name="privateKey"
+                                        type="password"
+                                        required
+                                        value={privateKey}
+                                        onChange={(e) => setPrivateKey(e.target.value)}
+                                        placeholder="Private Key"
+                                        className="appearance-none rounded-md relative block w-full px-3 py-2 border border-muted placeholder-muted-foreground focus:outline-none focus:ring-primary focus:border-primary sm:text-sm"
+                                    />
+                                </div>
+                            </div>
 
-                        <div>
-                            <label htmlFor="privateKey" className="block text-sm font-medium mb-2">
-                                Private Key
-                            </label>
-                            <Input
-                                id="privateKey"
-                                type="password"
-                                value={privateKey}
-                                onChange={(e) => setPrivateKey(e.target.value)}
-                                placeholder="Enter your WIRE private key"
-                                required
-                            />
-                        </div>
-
-                        <Button
-                            type="submit"
-                            className="w-full cyber-button"
-                            disabled={isLoading}
-                        >
-                            {isLoading ? "Signing in..." : "Sign in with Private Key"}
-                        </Button>
-                    </form>
-                </div>
+                            <div>
+                                <Button
+                                    type="submit"
+                                    className="w-full"
+                                    disabled={isLoading}
+                                >
+                                    {isLoading ? "Signing in..." : "Sign in"}
+                                </Button>
+                            </div>
+                        </form>
+                    </TabsContent>
+                </Tabs>
             </div>
         </div>
     );

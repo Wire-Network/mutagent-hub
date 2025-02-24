@@ -1,47 +1,57 @@
-
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { PrivateKey } from '@wireio/core';
+import { EthereumService } from '@/services/ethereum-service';
 
 interface AuthContextType {
-    privateKey: string | null;
-    accountName: string | null;
-    setCredentials: (accountName: string, privateKey: string, isMetaMask?: boolean) => void;
-    logout: () => void;
     isAuthenticated: boolean;
+    accountName: string | null;
+    privateKey: string | null;
+    isWalletAuth: boolean;
+    setCredentials: (account: string, key: string) => void;
+    logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-    const [privateKey, setPrivateKey] = useState<string | null>(null);
+    const [isAuthenticated, setIsAuthenticated] = useState(false);
     const [accountName, setAccountName] = useState<string | null>(null);
-    const [isInitialized, setIsInitialized] = useState(false);
+    const [privateKey, setPrivateKey] = useState<string | null>(null);
+    const [isWalletAuth, setIsWalletAuth] = useState(false);
+    const ethereumService = EthereumService.getInstance();
 
     useEffect(() => {
-        // Check for stored credentials on mount
         const storedKey = localStorage.getItem('wire_private_key');
         const storedAccount = localStorage.getItem('wire_account_name');
+        const storedAuthType = localStorage.getItem('wire_auth_type');
         
-        if (storedKey && storedAccount) {
-            setPrivateKey(storedKey);
+        if (storedAccount) {
             setAccountName(storedAccount);
+            if (storedAuthType === 'wallet') {
+                setIsWalletAuth(true);
+                setIsAuthenticated(true);
+            } else if (storedKey) {
+                setPrivateKey(storedKey);
+                setIsAuthenticated(true);
+            }
         }
-        
-        setIsInitialized(true);
     }, []);
 
-    const setCredentials = (account: string, key: string, isMetaMask: boolean = false) => {
+    const setCredentials = (account: string, key: string) => {
         try {
-            // Only validate private key format for non-MetaMask credentials
-            if (!isMetaMask) {
-                PrivateKey.from(key); // This will throw if invalid
+            // For wallet auth, we don't validate or store private key
+            const isWallet = key === '';
+            if (!isWallet) {
+                PrivateKey.from(key); // Validate private key format
+                localStorage.setItem('wire_private_key', key);
+                setPrivateKey(key);
             }
             
-            // Store credentials
-            localStorage.setItem('wire_private_key', key);
             localStorage.setItem('wire_account_name', account);
-            setPrivateKey(key);
+            localStorage.setItem('wire_auth_type', isWallet ? 'wallet' : 'key');
             setAccountName(account);
+            setIsWalletAuth(isWallet);
+            setIsAuthenticated(true);
         } catch (error) {
             console.error('Invalid private key:', error);
             throw new Error('Invalid private key format');
@@ -51,25 +61,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const logout = () => {
         localStorage.removeItem('wire_private_key');
         localStorage.removeItem('wire_account_name');
+        localStorage.removeItem('wire_auth_type');
         setPrivateKey(null);
         setAccountName(null);
+        setIsAuthenticated(false);
+        setIsWalletAuth(false);
+        if (isWalletAuth) {
+            ethereumService.disconnect();
+        }
     };
 
-    // Don't render children until we've checked local storage
-    if (!isInitialized) {
-        return null; // or return a loading spinner
-    }
-
     return (
-        <AuthContext.Provider 
-            value={{
-                privateKey,
-                accountName,
-                setCredentials,
-                logout,
-                isAuthenticated: !!privateKey && !!accountName
-            }}
-        >
+        <AuthContext.Provider value={{
+            isAuthenticated,
+            accountName,
+            privateKey,
+            isWalletAuth,
+            setCredentials,
+            logout
+        }}>
             {children}
         </AuthContext.Provider>
     );
