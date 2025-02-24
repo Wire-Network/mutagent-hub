@@ -1,5 +1,14 @@
+
 import { PinataSDK } from 'pinata-web3';
 import config from '@/config';
+
+interface PinataResponse {
+    data?: {
+        imageData?: string;
+        [key: string]: any;
+    };
+    [key: string]: any;
+}
 
 export class PinataService {
     private static instance: PinataService;
@@ -27,12 +36,9 @@ export class PinataService {
 
     async uploadJSON(content: any): Promise<string> {
         try {
-            // Convert content to File object
             const blob = new Blob([JSON.stringify(content)], { type: 'application/json' });
             const file = new File([blob], 'content.json', { type: 'application/json' });
-
             const result = await this.pinata.upload.file(file);
-            console.log('Content uploaded to Pinata:', result);
             return result.IpfsHash;
         } catch (error) {
             console.error('Error uploading to Pinata:', error);
@@ -40,26 +46,21 @@ export class PinataService {
         }
     }
 
-    async getContent(cid: string): Promise<any> {
+    async getContent(cid: string): Promise<PinataResponse> {
         try {
-            const data = await this.pinata.gateways.get(cid);
-            return data;
+            const response = await this.pinata.gateways.get(cid) as PinataResponse;
+            return response;
         } catch (error) {
             console.error('Error fetching from IPFS:', error);
-            if (error instanceof Error && error.message.includes('timeout')) {
-                throw new Error('IPFS request timed out');
-            }
-            throw new Error('Failed to fetch content from IPFS');
+            throw error;
         }
     }
 
     async isContentPinned(cid: string): Promise<boolean> {
         try {
-            // Use the gateway to check if content is available
             await this.pinata.gateways.get(cid);
             return true;
-        } catch (error) {
-            console.error('Error checking pin status:', error);
+        } catch {
             return false;
         }
     }
