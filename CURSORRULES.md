@@ -1,7 +1,7 @@
-# MutAgent System Architecture
+# Mutagent System Architecture
 
 ## Overview
-MutAgent is a decentralized AI persona system that combines blockchain (WIRE), IPFS (via Pinata), and AI capabilities. The system consists of three main components:
+Mutagent is a decentralized AI persona system that combines blockchain (WIRE), IPFS (via Pinata), and AI capabilities. The system consists of three main components:
 1. Frontend Client (React/TypeScript)
 2. Blockchain Layer (WIRE)
 3. Off-chain Service (AI/IPFS Handler)
