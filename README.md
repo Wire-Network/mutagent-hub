@@ -1,4 +1,4 @@
-# ImmutableNPC-Hub
+# Mutagent-Hub
 A front-end application that lets users chat with on-chain NPCs (Non-Player Characters) whose personas evolve over time. This UI integrates with:
 
 A blockchain smart contract that stores references (IPFS CIDs) for each message and persona state.
