@@ -1,7 +1,10 @@
+
 import { useState, useCallback } from 'react';
 import config from '@/config';
+import { PinataService } from '@/services/pinata-service';
 
 const AVATAR_CACHE = new Map<string, string>();
+const AVATAR_CID_CACHE = new Map<string, string>();
 
 interface GenerateAvatarOptions {
     model: string;
@@ -13,21 +16,41 @@ interface GenerateAvatarOptions {
     style_preset: string;
 }
 
+interface AvatarMetadata {
+    version: number;
+    personaName: string;
+    timestamp: string;
+}
+
 export function usePersonaAvatar() {
     const [isGenerating, setIsGenerating] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const pinataService = PinataService.getInstance();
 
     const generateAvatar = useCallback(async (personaName: string, backstory: string) => {
-        // Check cache first
+        // Return cached avatar if available
         if (AVATAR_CACHE.has(personaName)) {
             return AVATAR_CACHE.get(personaName);
         }
 
-        setIsGenerating(true);
-        setError(null);
-
         try {
-            // Create a prompt based on the persona's backstory
+            // Try to fetch existing avatar from IPFS
+            if (AVATAR_CID_CACHE.has(personaName)) {
+                const cid = AVATAR_CID_CACHE.get(personaName)!;
+                try {
+                    const existingAvatar = await pinataService.getContent(cid);
+                    if (existingAvatar?.data?.imageData) {
+                        AVATAR_CACHE.set(personaName, existingAvatar.data.imageData);
+                        return existingAvatar.data.imageData;
+                    }
+                } catch (error) {
+                    console.log('Failed to fetch existing avatar, generating new one');
+                }
+            }
+
+            setIsGenerating(true);
+            setError(null);
+
             const prompt = `Create a high-quality profile avatar for a character named ${personaName}. ${backstory}. The image should be a portrait style, focusing on the character's face and upper body, with a professional and polished look.`;
 
             const options: GenerateAvatarOptions = {
@@ -55,14 +78,27 @@ export function usePersonaAvatar() {
 
             const data = await response.json();
             const imageBase64 = data.images[0];
+            if (!imageBase64) {
+                throw new Error('No image data received from Venice API');
+            }
 
-            // Cache the result
+            const avatarData = {
+                imageData: imageBase64,
+                metadata: {
+                    version: 1,
+                    personaName,
+                    timestamp: new Date().toISOString()
+                } as AvatarMetadata
+            };
+
+            const cid = await pinataService.uploadJSON(avatarData);
+            AVATAR_CID_CACHE.set(personaName, cid);
             AVATAR_CACHE.set(personaName, imageBase64);
 
             return imageBase64;
         } catch (err: any) {
-            console.error('Error generating avatar:', err);
-            setError(err.message || 'Failed to generate avatar');
+            const errorMessage = err.message || 'Failed to generate avatar';
+            setError(errorMessage);
             return null;
         } finally {
             setIsGenerating(false);
@@ -74,4 +110,4 @@ export function usePersonaAvatar() {
         isGenerating,
         error
     };
-} 
+}

@@ -35,6 +35,7 @@ export default defineConfig(({ mode }) => {
     },
     build: {
       rollupOptions: {
+        external: ["framer-motion"],
         // Enable rollup polyfills
         plugins: []
       }
