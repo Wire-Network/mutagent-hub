@@ -26,36 +26,36 @@ const Login = () => {
         }
     }, [isAuthenticated, navigate]);
 
-    const handlePrivateKeySubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsLoading(true);
+    // const handlePrivateKeySubmit = async (e: React.FormEvent) => {
+    //     e.preventDefault();
+    //     setIsLoading(true);
 
-        try {
-            const trimmedAccount = accountName.trim();
-            const trimmedKey = privateKey.trim();
+    //     try {
+    //         const trimmedAccount = accountName.trim();
+    //         const trimmedKey = privateKey.trim();
 
-            const isValid = await wireService.verifyAccount(trimmedAccount, trimmedKey);
+    //         const isValid = await wireService.verifyAccount(trimmedAccount, trimmedKey);
             
-            if (!isValid) {
-                throw new Error("Invalid account name or private key");
-            }
+    //         if (!isValid) {
+    //             throw new Error("Invalid account name or private key");
+    //         }
 
-            await setCredentials(trimmedAccount, trimmedKey);
-            toast({
-                title: "Success",
-                description: "Successfully logged in!",
-            });
-            navigate('/');
-        } catch (error) {
-            toast({
-                variant: "destructive",
-                title: "Error",
-                description: error instanceof Error ? error.message : "Failed to login",
-            });
-        } finally {
-            setIsLoading(false);
-        }
-    };
+    //         await setCredentials(trimmedAccount, trimmedKey);
+    //         toast({
+    //             title: "Success",
+    //             description: "Successfully logged in!",
+    //         });
+    //         navigate('/');
+    //     } catch (error) {
+    //         toast({
+    //             variant: "destructive",
+    //             title: "Error",
+    //             description: error instanceof Error ? error.message : "Failed to login",
+    //         });
+    //     } finally {
+    //         setIsLoading(false);
+    //     }
+    // };
 
     const handleWalletLogin = async () => {
         setIsLoading(true);
@@ -114,24 +114,17 @@ const Login = () => {
                 </div>
 
                 <Tabs defaultValue="wallet" className="w-full">
-                    <TabsList className="grid w-full grid-cols-2">
-                        <TabsTrigger value="wallet">Wallet</TabsTrigger>
-                        <TabsTrigger value="private-key">Private Key</TabsTrigger>
-                    </TabsList>
-
                     <TabsContent value="wallet">
-                        <div className="mt-8 space-y-6">
-                            <Button
-                                onClick={handleWalletLogin}
+                        <Button
+                            onClick={handleWalletLogin}
                                 className="w-full"
                                 disabled={isLoading}
                             >
                                 {isLoading ? "Connecting..." : "Connect Wallet"}
                             </Button>
-                        </div>
                     </TabsContent>
 
-                    <TabsContent value="private-key">
+                    {/* <TabsContent value="private-key">
                         <form className="mt-8 space-y-6" onSubmit={handlePrivateKeySubmit}>
                             <div className="space-y-4 rounded-md shadow-sm">
                                 <div>
@@ -176,7 +169,7 @@ const Login = () => {
                                 </Button>
                             </div>
                         </form>
-                    </TabsContent>
+                    </TabsContent> */}
                 </Tabs>
             </div>
         </div>

@@ -25,16 +25,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const storedAccount = localStorage.getItem('wire_account_name');
         const storedAuthType = localStorage.getItem('wire_auth_type');
         
-        if (storedAccount) {
-            setAccountName(storedAccount);
-            if (storedAuthType === 'wallet') {
-                setIsWalletAuth(true);
-                setIsAuthenticated(true);
-            } else if (storedKey) {
-                setPrivateKey(storedKey);
-                setIsAuthenticated(true);
+        const initializeAuth = async () => {
+            if (storedAccount) {
+                setAccountName(storedAccount);
+                if (storedAuthType === 'wallet') {
+                    try {
+                        // Attempt to reconnect wallet
+                        const ethereum = (window as any).ethereum;
+                        if (ethereum && ethereum.selectedAddress) {
+                            await ethereumService.connectWallet('metamask', true);
+                            setIsWalletAuth(true);
+                            setIsAuthenticated(true);
+                        } else {
+                            // If wallet is not available, log out
+                            logout();
+                        }
+                    } catch (error) {
+                        console.error('Failed to reconnect wallet:', error);
+                        logout();
+                    }
+                } else if (storedKey) {
+                    setPrivateKey(storedKey);
+                    setIsAuthenticated(true);
+                }
             }
-        }
+        };
+
+        initializeAuth();
     }, []);
 
     const setCredentials = (account: string, key: string) => {
