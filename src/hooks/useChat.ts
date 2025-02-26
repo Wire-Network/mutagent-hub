@@ -1,4 +1,3 @@
-
 import { useState, useRef, useCallback } from "react";
 import { useWire } from "@/hooks/useWire";
 import { useIpfs } from "@/hooks/useIpfs";
@@ -14,6 +13,7 @@ export const useChat = (personaName: string, accountName: string) => {
     
     const [messages, setMessages] = useState<ExtendedMessage[]>([]);
     const [submitting, setSubmitting] = useState(false);
+    const latestHistoryCidRef = useRef<string | null>(null);
     const messageCache = useRef<Map<string, ExtendedMessage>>(new Map());
     const pollingTimeoutRef = useRef<NodeJS.Timeout>();
     const hasLoadedHistory = useRef(false);
@@ -39,6 +39,12 @@ export const useChat = (personaName: string, accountName: string) => {
                     finalized: true,
                     aiReply: pendingMessage.response
                 };
+                
+                if (pendingMessage.full_convo_history_cid) {
+                    console.log('Updating latest history CID:', pendingMessage.full_convo_history_cid);
+                    latestHistoryCidRef.current = pendingMessage.full_convo_history_cid;
+                }
+                
                 messageCache.current.set(pendingMessage.msg_cid, updatedMsg);
                 setMessages(prev => 
                     prev.map(msg => 
@@ -66,14 +72,12 @@ export const useChat = (personaName: string, accountName: string) => {
     }, [personaName, accountName]);
 
     const handleSendMessage = async (messageText: string) => {
-        // Prevent sending if already submitting or missing required data
         if (!personaName || !accountName || submitting || pendingMessageRef.current) {
             return;
         }
 
         setSubmitting(true);
         
-        // Clear any existing polling
         if (pollingTimeoutRef.current) {
             clearTimeout(pollingTimeoutRef.current);
             pollingTimeoutRef.current = undefined;
@@ -114,12 +118,15 @@ export const useChat = (personaName: string, accountName: string) => {
             messageCache.current.set(messageCid, newMessageObj);
             setMessages(prev => [...prev, newMessageObj]);
 
+            const historyCid = latestHistoryCidRef.current || messageCid;
+            console.log('Sending message with history CID:', historyCid);
+            
             await submitMessage(
                 personaName,
                 accountName,
                 persona.initial_state_cid,
                 messageCid,
-                messageCid
+                historyCid
             );
             
             startPolling();

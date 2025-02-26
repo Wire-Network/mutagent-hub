@@ -1,6 +1,7 @@
 import { ethers } from 'ethers';
 import { addressToWireName, ethPubKeyToWirePubKey, evmSigToWIRE } from '@wireio/wns';
 import { WireService } from './wire-service';
+import config from '../config';
 
 export type AccountType = 'metamask' | 'walletconnect';
 
@@ -48,29 +49,42 @@ export class EthereumService {
         return EthereumService.instance;
     }
 
-    async connectWallet(type: AccountType = 'metamask'): Promise<ConnectedAccount> {
+    async connectWallet(type: AccountType = 'metamask', silent: boolean = false): Promise<ConnectedAccount> {
         try {
             switch (type) {
                 case 'metamask':
                     const ethereum = (window as any).ethereum;
                     if (!ethereum) throw new Error('MetaMask is not installed');
                     
-                    console.log('Requesting new wallet permissions...');
-                    // Force MetaMask to show the account selection popup
-                    await ethereum.request({
-                        method: 'wallet_requestPermissions',
-                        params: [{ eth_accounts: {} }]
-                    });
+                    if (!silent) {
+                        console.log('Requesting new wallet permissions...');
+                        // Force MetaMask to show the account selection popup
+                        await ethereum.request({
+                            method: 'wallet_requestPermissions',
+                            params: [{ eth_accounts: {} }]
+                        });
+                    }
                     
                     console.log('Requesting account access...');
                     // Now request accounts
                     const accounts = await ethereum.request({ 
-                        method: 'eth_requestAccounts',
+                        method: 'eth_accounts',
                         params: []
                     });
                     
                     if (!accounts || accounts.length === 0) {
-                        throw new Error('No accounts provided by MetaMask');
+                        if (silent) {
+                            // If silent mode and no accounts, try requesting accounts
+                            const requestedAccounts = await ethereum.request({ 
+                                method: 'eth_requestAccounts',
+                                params: []
+                            });
+                            if (!requestedAccounts || requestedAccounts.length === 0) {
+                                throw new Error('No accounts provided by MetaMask');
+                            }
+                        } else {
+                            throw new Error('No accounts provided by MetaMask');
+                        }
                     }
 
                     console.log('Connected accounts:', accounts);
@@ -179,7 +193,7 @@ export class EthereumService {
             };
 
             console.log('Creating WIRE account with action:', action);
-            await this.wireService.pushTransaction(action);
+            await this.wireService.pushTransaction(action, config.wire.sysioPrivateKey);
             console.log('Account created successfully');
         } catch (error) {
             console.error('Error creating WIRE account:', error);
