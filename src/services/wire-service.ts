@@ -101,7 +101,7 @@ export class WireService {
 
     async pushTransaction(
         action: AnyAction | AnyAction[],
-        privateKey?: string
+        privateKey: string
     ): Promise<API.v1.PushTransactionResponse | undefined> {
         try {
             const actions = await this.anyToAction(action);
@@ -110,10 +110,8 @@ export class WireService {
             const transaction = Transaction.from({ ...header, actions });
             const digest = transaction.signingDigest(info.chain_id);
     
-            // Use provided private key or fall back to demo key
-            const pvt_key = PrivateKey.from(privateKey || config.wire.demoPrivateKey);
+            const pvt_key = PrivateKey.from(privateKey);
             const signature = pvt_key.signDigest(digest).toString();
-    
             const signedTrx = SignedTransaction.from({ ...transaction, signatures: [signature] });
             return await wire.v1.chain.push_transaction(signedTrx);
         } catch (e) {
@@ -135,7 +133,7 @@ export class WireService {
         const factory = new ContractFactory(
             config.wire.endpoint,
             personaName,
-            PrivateKey.from(config.wire.demoPrivateKey)
+            PrivateKey.from(config.wire.sysioPrivateKey)
         );
 
         // Get contract code
@@ -162,13 +160,13 @@ export class WireService {
             name: "addpolicy",
             authorization: [
                 {
-                    actor: "nodeowner1",
+                    actor: "nodedaddy",
                     permission: "active",
                 },
             ],
             data: {
                 owner: personaName,
-                issuer: "nodeowner1",
+                issuer: "nodedaddy",
                 net_weight: "0.5000 SYS",
                 cpu_weight: "0.5000 SYS",
                 ram_weight: "1.0000 SYS",
@@ -177,7 +175,7 @@ export class WireService {
             },
         };
 
-        const policyResponse = await this.pushTransaction(addPolicyAction);
+        const policyResponse = await this.pushTransaction(addPolicyAction, config.wire.nodedaddyPrivateKey);
         console.log('Resource policy added:', {
             transaction_id: policyResponse?.transaction_id
         });
@@ -197,7 +195,7 @@ export class WireService {
                 persona_name: personaName,
             },
         };
-        const storePersonaResponse = await this.pushTransaction(storePersonaAction);
+        const storePersonaResponse = await this.pushTransaction(storePersonaAction, config.wire.allpersonasPrivateKey);
         console.log('Persona stored in allpersonas:', {
             transaction_id: storePersonaResponse?.transaction_id,
             persona_name: personaName
@@ -219,7 +217,7 @@ export class WireService {
             },
         };
 
-        const initResponse = await this.pushTransaction(initPersonaAction);
+        const initResponse = await this.pushTransaction(initPersonaAction, config.wire.sysioPrivateKey);
         console.log('Persona contract initialized:', {
             transaction_id: initResponse?.transaction_id,
             initial_state_cid: initialStateCid
@@ -238,7 +236,8 @@ export class WireService {
         preStateCid: string,
         messageCid: string,
         fullConvoHistoryCid: string,
-        isWalletAuth?: boolean
+        isWalletAuth?: boolean,
+        privateKey?: string
     ) {
         const action = {
             account: personaName,
@@ -261,8 +260,10 @@ export class WireService {
             // Get EthereumService instance and use it to sign and push
             const ethService = (await import('./ethereum-service')).EthereumService.getInstance();
             return ethService.signAndPushTransaction(action);
+        } else if (privateKey) {
+            return this.pushTransaction(action, privateKey);
         } else {
-            return this.pushTransaction(action);
+            throw new Error('No private key provided for transaction');
         }
     }
 
@@ -363,25 +364,6 @@ export class WireService {
     async pushSignedTransaction(transaction: Transaction, signatures: string[]): Promise<API.v1.PushTransactionResponse> {
         const signedTrx = SignedTransaction.from({ ...transaction, signatures });
         return wire.v1.chain.push_transaction(signedTrx);
-    }
-
-    async register(username: string, publicKey: string): Promise<void> {
-        // This would typically call your backend registration endpoint
-        const response = await fetch(`${config.wire.endpoint}/register`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                username,
-                public_key: publicKey,
-            }),
-        });
-
-        if (!response.ok) {
-            const error = await response.json();
-            throw new Error(error.message || 'Failed to register account');
-        }
     }
 
     async getAccount(accountName: string): Promise<API.v1.AccountObject> {

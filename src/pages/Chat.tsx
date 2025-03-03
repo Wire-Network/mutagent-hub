@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -185,10 +184,11 @@ const Chat = () => {
                                         <ChatMessage
                                             content={message.messageText}
                                             isUser={message.user === accountName}
-                                            timestamp={new Date(message.created_at).toLocaleString()}
+                                            timestamp={message.finalized ? new Date(message.created_at).toLocaleString() : new Date().toLocaleString()}
                                             ipfsCid={message.message_cid}
                                             aiReply={message.aiReply}
                                             isPending={!message.finalized}
+                                            personaName={personaName}
                                         />
                                     </motion.div>
                                 ))}
