@@ -1,4 +1,3 @@
-
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
@@ -11,6 +10,7 @@ interface ChatMessageProps {
   ipfsCid?: string;
   aiReply?: string | null;
   isPending?: boolean;
+  personaName?: string;
 }
 
 export const ChatMessage = ({ 
@@ -20,7 +20,8 @@ export const ChatMessage = ({
   txHash, 
   ipfsCid,
   aiReply,
-  isPending 
+  isPending,
+  personaName = "Assistant"
 }: ChatMessageProps) => {
   return (
     <div className="space-y-4">
@@ -44,7 +45,7 @@ export const ChatMessage = ({
             "px-4 py-2 text-sm font-medium border-b",
             isUser ? "border-primary/20" : "border-secondary/20"
           )}>
-            {isUser ? "You" : "Assistant"}
+            {isUser ? "You" : personaName}
           </div>
           <div className="p-4">
             <p className="whitespace-pre-wrap">{content}</p>
@@ -65,7 +66,7 @@ export const ChatMessage = ({
           )}
           {ipfsCid && (
             <a
-              href={`https://ipfs.io/ipfs/${ipfsCid}`}
+              href={`https://wire.mypinata.cloud/ipfs/${ipfsCid}`}
               target="_blank"
               rel="noopener noreferrer"
               className="hover:text-primary transition-colors"
@@ -86,14 +87,14 @@ export const ChatMessage = ({
         >
           <div className="max-w-[80%] rounded-lg shadow-lg border border-secondary/50 bg-secondary/30 text-foreground hover:shadow-[0_0_15px_rgba(33,2,35,0.3)] transition-all duration-300">
             <div className="px-4 py-2 text-sm font-medium border-b border-secondary/20">
-              Assistant
+              {personaName}
             </div>
             <div className="p-4">
               <p className="whitespace-pre-wrap">{aiReply}</p>
             </div>
           </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1 px-2">
-            <span>{new Date().toLocaleString()}</span>
+            <span>{timestamp}</span>
           </div>
         </motion.div>
       )}
