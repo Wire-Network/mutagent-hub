@@ -10,14 +10,13 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { PersonaData, PersonaState } from '@/types/persona';
 import { useWire } from '@/hooks/useWire';
 import { usePersonaAvatar } from '@/hooks/usePersonaAvatar';
-import { Search, Menu, UserPlus } from "lucide-react";
+import { Search, LogOut } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { PinataService } from "@/services/pinata-service";
 
 const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const navigate = useNavigate();
   const { getPersonas, getPersonaInfo, loading: wireLoading, error: wireError } = useWire();
   const { isReady, getContent } = usePersonaContent();
@@ -167,163 +166,133 @@ const Index = () => {
   }
 
   return (
-    <div className="flex min-h-screen">
-      {/* Sidebar */}
-      <div className={cn(
-        "fixed left-0 top-0 h-full bg-secondary/30 backdrop-blur-md transition-all duration-300 z-20",
-        isSidebarOpen ? "w-64 border-r border-primary/20" : "w-16"
-      )}>
-        <div className="flex flex-col h-full">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-            className="w-8 h-8 mx-6 my-8"
-          >
-            <Menu className="h-4 w-4" />
-          </Button>
-          {isSidebarOpen && (
-            <div className="px-6 flex flex-col h-full">
-              <div className="space-y-4 flex-1">
-                <div>
-                  <h2 className="text-xl font-bold text-primary font-heading">Mutagent</h2>
-                  <div className="border-t border-primary/20 mt-4 pt-4">
-                    <p className="text-sm text-muted-foreground">
-                      Choose your companion and start chatting with unique AI personas.
-                    </p>
-                  </div>
-                </div>
-                
-                <div className="mt-auto">
-                  <AddPersonaDialog onPersonaAdded={refreshPersonas} />
-                </div>
-              </div>
-
-              <div className="mt-4 pt-4 border-t border-primary/20">
-                <Button 
-                  variant="default" 
-                  className="w-full cyber-button"
-                  onClick={() => {
-                    logout();
-                    navigate('/login');
-                  }}
-                >
-                  Sign Out
-                </Button>
+    <div className="min-h-screen bg-background">
+      {/* Header Bar */}
+      <div className="border-b border-primary/20 bg-secondary/30 backdrop-blur-md">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+            {/* Logo and Welcome */}
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl font-bold text-primary font-heading">Mutagent</h2>
+              <span className="hidden sm:inline-block text-muted-foreground">|</span>
+              <div className="hidden sm:block text-xl font-heading text-primary">
+                Welcome back, <span className="font-bold">{accountName}</span>
               </div>
             </div>
-          )}
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className={cn(
-        "flex-1 transition-all duration-300",
-        isSidebarOpen ? "ml-64" : "ml-16"
-      )}>
-        <div className="container px-6 py-8">
-          {/* Header with Welcome Message and Search */}
-          <div className="flex justify-between items-center mb-8">
-            <div className="text-xl font-heading text-primary">
-              Welcome back, <span className="font-bold">{accountName}</span>
-            </div>
-            <div className="w-64">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+            
+            {/* Search and Actions */}
+            <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="relative flex-1 sm:w-64">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-6 h-6" />
                 <Input
                   type="text"
                   placeholder="Search personas..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="pl-10 bg-secondary/20 border-primary/20"
+                  className="pl-10 bg-secondary/20 border-primary/20 w-full"
                 />
               </div>
+              <Button 
+                variant="ghost"
+                size="icon"
+                onClick={() => {
+                  logout();
+                  navigate('/login');
+                }}
+                className="min-h-[44px] min-w-[44px] text-muted-foreground hover:text-primary"
+                title="Sign Out"
+              >
+                <LogOut className="h-5 w-5" />
+              </Button>
             </div>
           </div>
-
-          {/* Alerts */}
-          {queryError && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertDescription>
-                Error loading personas: {queryError instanceof Error ? queryError.message : "Unknown error"}
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {!isReady && (
-            <Alert className="mb-4 border-primary/20">
-              <AlertDescription>
-                <div className="flex items-center gap-2">
-                  <div className="animate-spin h-4 w-4 border-2 border-primary rounded-full border-t-transparent"></div>
-                  Initializing IPFS connection...
-                </div>
-                <div className="text-sm text-muted-foreground mt-2">
-                  This may take a few moments. Please wait...
-                </div>
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {(isLoading || isGenerating) && (
-            <Alert className="mb-4 border-primary/20">
-              <AlertDescription>
-                <div className="flex items-center gap-2">
-                  <div className="animate-spin h-4 w-4 border-2 border-primary rounded-full border-t-transparent"></div>
-                  <div>
-                    <div>Loading personas...</div>
-                    <div className="text-sm text-muted-foreground">
-                      {isGenerating ? "Generating avatars..." : "Fetching data from IPFS network"}
-                    </div>
-                  </div>
-                </div>
-              </AlertDescription>
-            </Alert>
-          )}
-
-          {/* Persona Grid */}
-          {personas.length === 0 ? (
-            <div className="text-center text-muted-foreground">
-              No personas available. Create one to get started!
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {filteredPersonas.map((persona) => (
-                <div
-                  key={persona.name}
-                  className="persona-card rounded-lg p-6 shadow-lg transition-all duration-300 border border-primary/20 hover:border-primary/40 flex flex-col items-center"
-                >
-                  <img
-                    src={persona.imageUrl}
-                    alt={persona.name}
-                    className="w-28 h-28 mb-4 rounded-full object-cover border-2 border-primary/30"
-                  />
-                  <h2 className="text-2xl font-bold mb-3 capitalize text-primary font-heading">{persona.name}</h2>
-                  <p className="text-muted-foreground mb-4 line-clamp-2 text-center text-sm">
-                    {persona.backstory}
-                  </p>
-                  {persona.traits && persona.traits.length > 0 && (
-                    <div className="flex flex-wrap gap-1.5 mb-4 justify-center">
-                      {persona.traits.map((trait, index) => (
-                        <span
-                          key={`${trait}-${index}`}
-                          className="bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-full text-xs"
-                        >
-                          {trait}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                  <Button
-                    className="w-full cyber-button mt-auto"
-                    onClick={() => navigate(`/chat/${persona.name.toLowerCase()}`)}
-                  >
-                    Chat Now
-                  </Button>
-                </div>
-              ))}
-            </div>
-          )}
         </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="container mx-auto px-4 py-6">
+        {/* Alerts */}
+        {queryError && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>
+              Error loading personas: {queryError instanceof Error ? queryError.message : "Unknown error"}
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {!isReady && (
+          <Alert className="mb-4 border-primary/20">
+            <AlertDescription>
+              <div className="flex items-center gap-2">
+                <div className="animate-spin h-4 w-4 border-2 border-primary rounded-full border-t-transparent"></div>
+                Initializing IPFS connection...
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {(isLoading || isGenerating) && (
+          <Alert className="mb-4 border-primary/20">
+            <AlertDescription>
+              <div className="flex items-center gap-2">
+                <div className="animate-spin h-4 w-4 border-2 border-primary rounded-full border-t-transparent"></div>
+                <div>
+                  Loading personas...
+                </div>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Header with Add Persona Button */}
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-lg sm:text-xl font-bold font-heading text-primary">Your AI Companions</h3>
+          <AddPersonaDialog onPersonaAdded={refreshPersonas} />
+        </div>
+
+        {/* Persona Grid */}
+        {personas.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground mb-4">No personas available. Create one to get started!</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredPersonas.map((persona) => (
+              <div
+                key={persona.name}
+                className="persona-card rounded-lg p-4 md:p-6 shadow-lg transition-all duration-300 border border-primary/20 hover:border-primary/40 flex flex-col items-center"
+              >
+                <img
+                  src={persona.imageUrl}
+                  alt={persona.name}
+                  className="w-20 h-20 md:w-28 md:h-28 mb-3 md:mb-4 rounded-full object-cover border-2 border-primary/30"
+                />
+                <h2 className="text-xl md:text-2xl font-bold mb-2 md:mb-3 capitalize text-primary font-heading">{persona.name}</h2>
+                <p className="text-muted-foreground mb-3 md:mb-4 line-clamp-2 text-center text-sm">
+                  {persona.backstory}
+                </p>
+                {persona.traits && persona.traits.length > 0 && (
+                  <div className="flex flex-wrap gap-1 md:gap-1.5 mb-3 md:mb-4 justify-center">
+                    {persona.traits.map((trait, index) => (
+                      <span
+                        key={`${trait}-${index}`}
+                        className="bg-primary/10 text-primary border border-primary/20 px-2 py-0.5 rounded-full text-xs"
+                      >
+                        {trait}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <Button
+                  className="w-full cyber-button mt-auto min-h-[44px]"
+                  onClick={() => navigate(`/chat/${persona.name.toLowerCase()}`)}
+                >
+                  Chat Now
+                </Button>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
